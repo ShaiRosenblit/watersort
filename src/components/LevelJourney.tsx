@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { getHighestCompleted } from "../game/progress";
+import { tapLight } from "../game/haptics";
 
 const TOTAL_LEVELS = 50;
 
@@ -16,6 +17,11 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
   useEffect(() => {
     currentRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
+
+  function handleSelect(i: number) {
+    tapLight();
+    onSelectLevel(i);
+  }
 
   return (
     <div className="journey-screen">
@@ -45,7 +51,7 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
                 ref={isCurrent ? currentRef : undefined}
                 className={`journey-node ${status}`}
                 disabled={locked}
-                onClick={() => onSelectLevel(i)}
+                onClick={() => handleSelect(i)}
               >
                 <span className="journey-node__number">{i + 1}</span>
                 {completed && <span className="journey-node__check">✓</span>}

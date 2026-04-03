@@ -4,18 +4,25 @@ interface TubeProps {
   segments: Container;
   capacity: number;
   selected: boolean;
+  shaking: boolean;
+  poured: boolean;
   onClick: () => void;
 }
 
-export function Tube({ segments, capacity, selected, onClick }: TubeProps) {
+export function Tube({ segments, capacity, selected, shaking, poured, onClick }: TubeProps) {
   const emptySlots = capacity - segments.length;
 
+  const classes = [
+    "tube",
+    selected && "tube--selected",
+    shaking && "tube--shake",
+    poured && "tube--poured",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <button
-      className={`tube ${selected ? "tube--selected" : ""}`}
-      onClick={onClick}
-      aria-label="Container"
-    >
+    <button className={classes} onClick={onClick} aria-label="Container">
       <div className="tube__inner">
         {Array.from({ length: emptySlots }).map((_, i) => (
           <div key={`empty-${i}`} className="tube__segment tube__segment--empty" />

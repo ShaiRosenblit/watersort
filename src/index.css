@@ -70,7 +70,8 @@ body {
 }
 
 .btn:active {
-  transform: scale(0.97);
+  transform: scale(0.93);
+  transition: transform 0.08s;
 }
 
 .btn--primary {
@@ -219,7 +220,8 @@ body {
 }
 
 .journey-node:active:not(:disabled) {
-  transform: scale(0.93);
+  transform: scale(0.88);
+  transition: transform 0.08s;
 }
 
 .journey-node--done {
@@ -331,20 +333,31 @@ body {
   border: none;
   padding: 6px 0 0;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-tap-highlight-color: transparent;
 }
 
 .tube:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
+  transition: transform 0.06s;
 }
 
 .tube--selected {
-  transform: translateY(-8px);
+  transform: translateY(-10px) scale(1.04);
 }
 
 .tube--selected:active {
-  transform: translateY(-8px) scale(0.95);
+  transform: translateY(-10px) scale(0.96);
+}
+
+/* Shake on invalid move */
+.tube--shake {
+  animation: tubeShake 0.35s ease;
+}
+
+/* Bounce when receiving a pour */
+.tube--poured {
+  animation: tubePour 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tube__inner {
@@ -356,21 +369,43 @@ body {
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 
 .tube--selected .tube__inner {
   border-color: var(--accent);
-  box-shadow: 0 0 12px rgba(233, 69, 96, 0.35);
+  box-shadow: 0 0 14px rgba(233, 69, 96, 0.4);
+}
+
+.tube--shake .tube__inner {
+  border-color: #ff4757;
+  box-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
 }
 
 .tube__segment {
   width: 100%;
   height: var(--tube-segment-height);
-  transition: background-color 0.2s;
+  transition: background-color 0.15s;
 }
 
 .tube__segment--empty {
   background: transparent;
+}
+
+@keyframes tubeShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-5px) rotate(-1.5deg); }
+  30% { transform: translateX(5px) rotate(1.5deg); }
+  45% { transform: translateX(-4px) rotate(-1deg); }
+  60% { transform: translateX(4px) rotate(1deg); }
+  75% { transform: translateX(-2px); }
+  90% { transform: translateX(2px); }
+}
+
+@keyframes tubePour {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08) translateY(-3px); }
+  100% { transform: scale(1) translateY(0); }
 }
 
 /* ============================================
@@ -396,6 +431,7 @@ body {
   text-align: center;
   max-width: 320px;
   width: 100%;
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .win-dialog h2 {
@@ -424,13 +460,9 @@ body {
   }
 }
 
-/* Shake animation for invalid moves */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-4px); }
-  40% { transform: translateX(4px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
+@keyframes popIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* ============================================

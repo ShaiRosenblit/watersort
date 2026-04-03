@@ -4,6 +4,7 @@ import { checkWin, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
 import { configForLevel, ENDLESS_DEFAULT_CONFIG } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
+import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
 import { Board } from "./Board";
 
 interface GameScreenProps {
@@ -53,6 +54,8 @@ function buildGameState(config: LevelConfig): GameState {
   };
 }
 
+const ANIM_MS = 350;
+
 export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
     const saved = loadGame(mode, levelIndex);
@@ -60,8 +63,10 @@ export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameSc
     const config = mode === "level" ? configForLevel(levelIndex) : ENDLESS_DEFAULT_CONFIG;
     return buildGameState(config);
   });
-  const [invalidShake, setInvalidShake] = useState<number | null>(null);
-  const shakeTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [shakingIndex, setShakingIndex] = useState<number | null>(null);
+  const [pouredIndex, setPouredIndex] = useState<number | null>(null);
+  const shakeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const pourTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -71,27 +76,42 @@ export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameSc
     initialized.current = true;
   }, [game, levelIndex, mode]);
 
+  function flashAnim(
+    setter: (v: number | null) => void,
+    timerRef: React.RefObject<ReturnType<typeof setTimeout> | undefined>,
+    index: number
+  ) {
+    setter(index);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setter(null), ANIM_MS);
+  }
+
   function handleSelect(index: number) {
     if (game.won) return;
 
     if (game.selectedContainer === null) {
       if (game.board[index].length > 0) {
+        tapLight();
         setGame((prev) => ({ ...prev, selectedContainer: index }));
       }
       return;
     }
 
     if (game.selectedContainer === index) {
+      tapLight();
       setGame((prev) => ({ ...prev, selectedContainer: null }));
       return;
     }
 
     const { board, selectedContainer, config } = game;
     if (isValidMove(board, selectedContainer, index, config.containerCapacity)) {
+      tapMedium();
+      flashAnim(setPouredIndex, pourTimer, index);
       const nextBoard = executeMove(board, selectedContainer, index, config.containerCapacity);
       const won = checkWin(nextBoard, config.containerCapacity);
-      if (won && mode === "level") {
-        markLevelCompleted(levelIndex);
+      if (won) {
+        if (mode === "level") markLevelCompleted(levelIndex);
+        setTimeout(tapCelebration, 250);
       }
       setGame((prev) => ({
         ...prev,
@@ -101,14 +121,14 @@ export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameSc
         won,
       }));
     } else {
-      setInvalidShake(index);
-      clearTimeout(shakeTimeout.current);
-      shakeTimeout.current = setTimeout(() => setInvalidShake(null), 400);
+      tapError();
+      flashAnim(setShakingIndex, shakeTimer, index);
       setGame((prev) => ({ ...prev, selectedContainer: null }));
     }
   }
 
   function handleRestart() {
+    tapLight();
     const config = mode === "level" ? configForLevel(levelIndex) : ENDLESS_DEFAULT_CONFIG;
     const newGame = buildGameState(config);
     setGame(newGame);
@@ -132,11 +152,13 @@ export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameSc
         <span className="game-moves">Moves: {game.moveCount}</span>
       </header>
 
-      <div className={`board-wrapper ${invalidShake !== null ? "" : ""}`}>
+      <div className="board-wrapper">
         <Board
           board={game.board}
           capacity={game.config.containerCapacity}
           selectedIndex={game.selectedContainer}
+          shakingIndex={shakingIndex}
+          pouredIndex={pouredIndex}
           onSelectContainer={handleSelect}
         />
       </div>
