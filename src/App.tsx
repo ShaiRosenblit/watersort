@@ -1,13 +1,16 @@
 import { useState } from "react";
-import type { GameMode } from "./game/types";
-import { MenuScreen } from "./components/MenuScreen";
 import { GameScreen } from "./components/GameScreen";
 import { LevelJourney } from "./components/LevelJourney";
+import { getHighestCompleted } from "./game/progress";
 
 type Screen =
-  | { kind: "menu" }
   | { kind: "journey" }
-  | { kind: "game"; mode: GameMode; levelIndex: number };
+  | { kind: "level"; levelIndex: number }
+  | { kind: "endless" };
+
+function currentLevelIndex(): number {
+  return getHighestCompleted() + 1;
+}
 
 const STORAGE_KEY_SCREEN = "watersort:screen";
 
@@ -16,10 +19,11 @@ function loadScreen(): Screen {
     const raw = localStorage.getItem(STORAGE_KEY_SCREEN);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s.kind === "journey" || s.kind === "game" || s.kind === "menu") return s;
+      if (s.kind === "journey" || s.kind === "endless") return s;
+      if (s.kind === "level" && typeof s.levelIndex === "number") return s;
     }
   } catch { /* ignore */ }
-  return { kind: "menu" };
+  return { kind: "level", levelIndex: currentLevelIndex() };
 }
 
 function saveScreen(screen: Screen) {
@@ -35,40 +39,33 @@ export default function App() {
   }
 
   switch (screen.kind) {
-    case "menu":
-      return (
-        <MenuScreen
-          onSelectMode={(mode) => {
-            if (mode === "level") {
-              navigate({ kind: "journey" });
-            } else {
-              navigate({ kind: "game", mode: "endless", levelIndex: 0 });
-            }
-          }}
-        />
-      );
-
     case "journey":
       return (
         <LevelJourney
-          onSelectLevel={(idx) => navigate({ kind: "game", mode: "level", levelIndex: idx })}
-          onBack={() => navigate({ kind: "menu" })}
+          onSelectLevel={(idx) => navigate({ kind: "level", levelIndex: idx })}
+          onBack={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
         />
       );
 
-    case "game":
+    case "level":
       return (
         <GameScreen
-          mode={screen.mode}
+          mode="level"
           levelIndex={screen.levelIndex}
-          onBack={() => {
-            if (screen.mode === "level") {
-              navigate({ kind: "journey" });
-            } else {
-              navigate({ kind: "menu" });
-            }
-          }}
-          onLevelComplete={() => navigate({ kind: "journey" })}
+          onJourney={() => navigate({ kind: "journey" })}
+          onEndless={() => navigate({ kind: "endless" })}
+          onNextLevel={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
+        />
+      );
+
+    case "endless":
+      return (
+        <GameScreen
+          mode="endless"
+          levelIndex={0}
+          onJourney={() => navigate({ kind: "journey" })}
+          onEndless={() => {}}
+          onNextLevel={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
         />
       );
   }

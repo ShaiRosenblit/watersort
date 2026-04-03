@@ -27,7 +27,7 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
     <div className="journey-screen">
       <header className="journey-header">
         <button className="btn btn--small" onClick={onBack}>
-          ← Menu
+          ← Play
         </button>
         <h2 className="journey-title">Levels</h2>
         <span className="journey-progress">{currentLevel} / {TOTAL_LEVELS}</span>

@@ -10,8 +10,9 @@ import { Board } from "./Board";
 interface GameScreenProps {
   mode: GameMode;
   levelIndex: number;
-  onBack: () => void;
-  onLevelComplete: () => void;
+  onJourney: () => void;
+  onEndless: () => void;
+  onNextLevel: () => void;
 }
 
 const STORAGE_KEY_GAME = "watersort:game";
@@ -56,7 +57,7 @@ function buildGameState(config: LevelConfig): GameState {
 
 const ANIM_MS = 350;
 
-export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameScreenProps) {
+export function GameScreen({ mode, levelIndex, onJourney, onEndless, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
     const saved = loadGame(mode, levelIndex);
     if (saved) return { ...saved, selectedContainer: null };
@@ -130,24 +131,19 @@ export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameSc
   function handleRestart() {
     tapLight();
     const config = mode === "level" ? configForLevel(levelIndex) : ENDLESS_DEFAULT_CONFIG;
-    const newGame = buildGameState(config);
-    setGame(newGame);
+    setGame(buildGameState(config));
   }
 
-  function handleBackToJourney() {
+  function handleContinue() {
     clearSavedGame();
-    onLevelComplete();
+    onNextLevel();
   }
 
-  const title = mode === "level" ? `Level ${levelIndex + 1}` : "Endless Mode";
-  const backLabel = mode === "level" ? "← Levels" : "← Menu";
+  const title = mode === "level" ? `Level ${levelIndex + 1}` : "Endless";
 
   return (
     <div className="game-screen">
       <header className="game-header">
-        <button className="btn btn--small" onClick={onBack}>
-          {backLabel}
-        </button>
         <h2 className="game-title">{title}</h2>
         <span className="game-moves">Moves: {game.moveCount}</span>
       </header>
@@ -170,27 +166,36 @@ export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameSc
             <p>Completed in {game.moveCount} moves</p>
             <div className="win-actions">
               {mode === "level" && (
-                <button className="btn btn--primary" onClick={handleBackToJourney}>
-                  Continue →
+                <button className="btn btn--primary" onClick={handleContinue}>
+                  Next Level →
                 </button>
               )}
               <button className="btn" onClick={handleRestart}>
                 {mode === "endless" ? "New Puzzle" : "Replay"}
               </button>
-              {mode === "endless" && (
-                <button className="btn" onClick={onBack}>
-                  Menu
-                </button>
-              )}
             </div>
           </div>
         </div>
       )}
 
-      <div className="game-actions">
-        <button className="btn" onClick={handleRestart}>
+      <div className="game-footer">
+        <button className="btn btn--small" onClick={handleRestart}>
           Restart
         </button>
+        <div className="game-footer__nav">
+          {mode === "level" ? (
+            <button className="btn btn--small btn--subtle" onClick={onEndless}>
+              Endless
+            </button>
+          ) : (
+            <button className="btn btn--small btn--subtle" onClick={onNextLevel}>
+              Levels
+            </button>
+          )}
+          <button className="btn btn--small btn--subtle" onClick={onJourney}>
+            Journey
+          </button>
+        </div>
       </div>
     </div>
   );
