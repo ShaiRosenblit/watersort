@@ -1,0 +1,327 @@
+/* ============================================
+   Reset & Base
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --surface-light: #0f3460;
+  --text: #eaeaea;
+  --text-muted: #a0a0b0;
+  --accent: #e94560;
+  --accent-hover: #ff6b81;
+  --radius: 12px;
+  --tube-width: 52px;
+  --tube-segment-height: 36px;
+  --tube-gap: 10px;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#root {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: 2px solid var(--surface-light);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-height: 44px;
+}
+
+.btn:hover {
+  background: var(--surface-light);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn--small {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
+.btn--large {
+  padding: 16px 32px;
+  font-size: 1.15rem;
+  width: 100%;
+}
+
+/* ============================================
+   Menu Screen
+   ============================================ */
+.menu-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.menu-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--accent);
+}
+
+.menu-subtitle {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+/* ============================================
+   Game Screen
+   ============================================ */
+.game-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 16px;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.game-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.game-moves {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.board-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.game-actions {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 16px;
+}
+
+/* ============================================
+   Board
+   ============================================ */
+.board {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--tube-gap);
+  padding: 8px;
+}
+
+/* ============================================
+   Tube (Container)
+   ============================================ */
+.tube {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 6px 0 0;
+  cursor: pointer;
+  transition: transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tube:active {
+  transform: scale(0.95);
+}
+
+.tube--selected {
+  transform: translateY(-8px);
+}
+
+.tube--selected:active {
+  transform: translateY(-8px) scale(0.95);
+}
+
+.tube__inner {
+  width: var(--tube-width);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0 0 14px 14px;
+  border-top: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tube--selected .tube__inner {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(233, 69, 96, 0.35);
+}
+
+.tube__segment {
+  width: 100%;
+  height: var(--tube-segment-height);
+  transition: background-color 0.2s;
+}
+
+.tube__segment--empty {
+  background: transparent;
+}
+
+/* ============================================
+   Win Overlay
+   ============================================ */
+.win-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  animation: fadeIn 0.25s ease;
+}
+
+.win-dialog {
+  background: var(--surface);
+  border: 2px solid var(--surface-light);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+}
+
+.win-dialog h2 {
+  font-size: 1.8rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.win-dialog p {
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.win-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Shake animation for invalid moves */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ============================================
+   Responsive: Tablets
+   ============================================ */
+@media (min-width: 500px) {
+  :root {
+    --tube-width: 58px;
+    --tube-segment-height: 40px;
+    --tube-gap: 14px;
+  }
+}
+
+/* ============================================
+   Responsive: Small phones
+   ============================================ */
+@media (max-width: 380px) {
+  :root {
+    --tube-width: 42px;
+    --tube-segment-height: 30px;
+    --tube-gap: 6px;
+  }
+
+  .menu-title {
+    font-size: 2rem;
+  }
+
+  .game-title {
+    font-size: 1rem;
+  }
+}
