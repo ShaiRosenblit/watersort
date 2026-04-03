@@ -31,16 +31,50 @@ export const COLOR_NAMES: Record<string, string> = {
 };
 
 export const DEFAULT_CAPACITY = 4;
+export const TOTAL_LEVELS = 1000;
 
 /**
- * Generate a LevelConfig for a given difficulty tier (0-indexed).
- * Gradually increases colors and shuffle steps.
+ * Difficulty curve for 1000 levels.
+ *
+ *   1–20   : 3 colors, gentle shuffle          (warm-up)
+ *   21–50  : 3→4 colors, moderate shuffle       (getting started)
+ *   51–100 : 4→6 colors, growing shuffle        (intermediate)
+ *   101–300: 6→8 colors, challenging shuffle     (hard)
+ *   301–600: 8→10 colors, tough shuffle          (very hard)
+ *   601–1000: 10→12 colors, maximum shuffle      (extreme)
  */
 export function configForLevel(levelIndex: number): LevelConfig {
-  const baseColors = 3;
-  const extraColors = Math.min(Math.floor(levelIndex / 3), COLORS.length - baseColors);
-  const numColors = baseColors + extraColors;
-  const shuffleSteps = 30 + levelIndex * 10;
+  const n = levelIndex; // 0-indexed
+
+  let numColors: number;
+  let shuffleSteps: number;
+
+  if (n < 20) {
+    numColors = 3;
+    shuffleSteps = 20 + n * 2;
+  } else if (n < 50) {
+    const t = (n - 20) / 30;
+    numColors = Math.round(3 + t);        // 3 → 4
+    shuffleSteps = 60 + Math.round(t * 30);
+  } else if (n < 100) {
+    const t = (n - 50) / 50;
+    numColors = Math.round(4 + t * 2);    // 4 → 6
+    shuffleSteps = 90 + Math.round(t * 40);
+  } else if (n < 300) {
+    const t = (n - 100) / 200;
+    numColors = Math.round(6 + t * 2);    // 6 → 8
+    shuffleSteps = 130 + Math.round(t * 50);
+  } else if (n < 600) {
+    const t = (n - 300) / 300;
+    numColors = Math.round(8 + t * 2);    // 8 → 10
+    shuffleSteps = 180 + Math.round(t * 40);
+  } else {
+    const t = Math.min((n - 600) / 400, 1);
+    numColors = Math.round(10 + t * 2);   // 10 → 12
+    shuffleSteps = 220 + Math.round(t * 30);
+  }
+
+  numColors = Math.min(numColors, COLORS.length);
 
   return {
     numColors,

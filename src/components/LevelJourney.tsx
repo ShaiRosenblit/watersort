@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import { getHighestCompleted } from "../game/progress";
+import { TOTAL_LEVELS } from "../game/config";
 import { tapLight } from "../game/haptics";
 
-const TOTAL_LEVELS = 50;
+const WINDOW_BEFORE = 3;
+const WINDOW_AFTER = 4;
 
 interface LevelJourneyProps {
   onSelectLevel: (levelIndex: number) => void;
@@ -11,8 +13,13 @@ interface LevelJourneyProps {
 
 export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
   const highestCompleted = getHighestCompleted();
-  const currentLevel = highestCompleted + 1;
+  const currentLevel = Math.min(highestCompleted + 1, TOTAL_LEVELS - 1);
   const currentRef = useRef<HTMLButtonElement>(null);
+
+  const windowStart = Math.max(0, currentLevel - WINDOW_BEFORE);
+  const windowEnd = Math.min(TOTAL_LEVELS - 1, currentLevel + WINDOW_AFTER);
+  const visibleLevels: number[] = [];
+  for (let i = windowStart; i <= windowEnd; i++) visibleLevels.push(i);
 
   useEffect(() => {
     currentRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -23,18 +30,35 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
     onSelectLevel(i);
   }
 
+  const pct = Math.round(((highestCompleted + 1) / TOTAL_LEVELS) * 100);
+
   return (
     <div className="journey-screen">
       <header className="journey-header">
         <button className="btn btn--small" onClick={onBack}>
           ← Play
         </button>
-        <h2 className="journey-title">Levels</h2>
-        <span className="journey-progress">{currentLevel} / {TOTAL_LEVELS}</span>
+        <h2 className="journey-title">Journey</h2>
+        <span className="journey-progress">Level {currentLevel + 1}</span>
       </header>
 
+      <div className="journey-stats">
+        <div className="journey-bar">
+          <div className="journey-bar__fill" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="journey-bar__label">
+          {highestCompleted + 1} / {TOTAL_LEVELS} completed
+        </span>
+      </div>
+
       <div className="journey-path">
-        {Array.from({ length: TOTAL_LEVELS }).map((_, i) => {
+        {windowStart > 0 && (
+          <div className="journey-fade journey-fade--top">
+            <span className="journey-fade__label">· · ·</span>
+          </div>
+        )}
+
+        {visibleLevels.map((i) => {
           const completed = i <= highestCompleted;
           const isCurrent = i === currentLevel;
           const locked = i > currentLevel;
@@ -44,12 +68,16 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
           else if (isCurrent) status = "journey-node--current";
           else status = "journey-node--locked";
 
+          const side = i % 2 === 0 ? "journey-row--left" : "journey-row--right";
+
           return (
-            <div key={i} className={`journey-row ${i % 2 === 0 ? "journey-row--left" : "journey-row--right"}`}>
-              {i < TOTAL_LEVELS - 1 && <div className={`journey-connector ${completed ? "journey-connector--done" : ""}`} />}
+            <div key={i} className={`journey-row ${side}`}>
+              {i < windowEnd && (
+                <div className={`journey-connector ${completed ? "journey-connector--done" : ""}`} />
+              )}
               <button
                 ref={isCurrent ? currentRef : undefined}
-                className={`journey-node ${status}`}
+                className={`journey-node ${status} ${isCurrent ? "journey-node--big" : ""}`}
                 disabled={locked}
                 onClick={() => handleSelect(i)}
               >
@@ -59,6 +87,12 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
             </div>
           );
         })}
+
+        {windowEnd < TOTAL_LEVELS - 1 && (
+          <div className="journey-fade journey-fade--bottom">
+            <span className="journey-fade__label">· · ·</span>
+          </div>
+        )}
       </div>
     </div>
   );
