@@ -2,26 +2,74 @@ import { useState } from "react";
 import type { GameMode } from "./game/types";
 import { MenuScreen } from "./components/MenuScreen";
 import { GameScreen } from "./components/GameScreen";
+import { LevelJourney } from "./components/LevelJourney";
 
-const STORAGE_KEY_MODE = "watersort:mode";
+type Screen =
+  | { kind: "menu" }
+  | { kind: "journey" }
+  | { kind: "game"; mode: GameMode; levelIndex: number };
 
-function loadMode(): GameMode {
-  const saved = localStorage.getItem(STORAGE_KEY_MODE);
-  if (saved === "level" || saved === "endless") return saved;
-  return "menu";
+const STORAGE_KEY_SCREEN = "watersort:screen";
+
+function loadScreen(): Screen {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_SCREEN);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.kind === "journey" || s.kind === "game" || s.kind === "menu") return s;
+    }
+  } catch { /* ignore */ }
+  return { kind: "menu" };
+}
+
+function saveScreen(screen: Screen) {
+  localStorage.setItem(STORAGE_KEY_SCREEN, JSON.stringify(screen));
 }
 
 export default function App() {
-  const [mode, setMode] = useState<GameMode>(loadMode);
+  const [screen, setScreen] = useState<Screen>(loadScreen);
 
-  function handleSetMode(m: GameMode) {
-    localStorage.setItem(STORAGE_KEY_MODE, m);
-    setMode(m);
+  function navigate(s: Screen) {
+    saveScreen(s);
+    setScreen(s);
   }
 
-  if (mode === "menu") {
-    return <MenuScreen onSelectMode={handleSetMode} />;
-  }
+  switch (screen.kind) {
+    case "menu":
+      return (
+        <MenuScreen
+          onSelectMode={(mode) => {
+            if (mode === "level") {
+              navigate({ kind: "journey" });
+            } else {
+              navigate({ kind: "game", mode: "endless", levelIndex: 0 });
+            }
+          }}
+        />
+      );
 
-  return <GameScreen mode={mode} onBack={() => handleSetMode("menu")} />;
+    case "journey":
+      return (
+        <LevelJourney
+          onSelectLevel={(idx) => navigate({ kind: "game", mode: "level", levelIndex: idx })}
+          onBack={() => navigate({ kind: "menu" })}
+        />
+      );
+
+    case "game":
+      return (
+        <GameScreen
+          mode={screen.mode}
+          levelIndex={screen.levelIndex}
+          onBack={() => {
+            if (screen.mode === "level") {
+              navigate({ kind: "journey" });
+            } else {
+              navigate({ kind: "menu" });
+            }
+          }}
+          onLevelComplete={() => navigate({ kind: "journey" })}
+        />
+      );
+  }
 }

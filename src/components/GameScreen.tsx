@@ -1,41 +1,45 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GameMode, GameState, LevelConfig } from "../game/types";
 import { checkWin, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
 import { configForLevel, ENDLESS_DEFAULT_CONFIG } from "../game/config";
+import { markLevelCompleted } from "../game/progress";
 import { Board } from "./Board";
 
 interface GameScreenProps {
   mode: GameMode;
+  levelIndex: number;
   onBack: () => void;
+  onLevelComplete: () => void;
 }
 
 const STORAGE_KEY_GAME = "watersort:game";
-const STORAGE_KEY_LEVEL = "watersort:levelIndex";
 
-interface SavedProgress {
+interface SavedGame {
   mode: GameMode;
   levelIndex: number;
   game: GameState;
 }
 
-function saveProgress(mode: GameMode, levelIndex: number, game: GameState) {
-  const data: SavedProgress = { mode, levelIndex, game };
-  localStorage.setItem(STORAGE_KEY_GAME, JSON.stringify(data));
-  localStorage.setItem(STORAGE_KEY_LEVEL, String(levelIndex));
+function saveGame(mode: GameMode, levelIndex: number, game: GameState) {
+  localStorage.setItem(STORAGE_KEY_GAME, JSON.stringify({ mode, levelIndex, game }));
 }
 
-function loadProgress(mode: GameMode): { levelIndex: number; game: GameState } | null {
+function loadGame(mode: GameMode, levelIndex: number): GameState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_GAME);
     if (!raw) return null;
-    const data: SavedProgress = JSON.parse(raw);
-    if (data.mode !== mode) return null;
+    const data: SavedGame = JSON.parse(raw);
+    if (data.mode !== mode || data.levelIndex !== levelIndex) return null;
     if (!data.game?.board || !data.game?.config) return null;
-    return { levelIndex: data.levelIndex, game: data.game };
+    return data.game;
   } catch {
     return null;
   }
+}
+
+function clearSavedGame() {
+  localStorage.removeItem(STORAGE_KEY_GAME);
 }
 
 function buildGameState(config: LevelConfig): GameState {
@@ -49,38 +53,23 @@ function buildGameState(config: LevelConfig): GameState {
   };
 }
 
-export function GameScreen({ mode, onBack }: GameScreenProps) {
-  const [levelIndex, setLevelIndex] = useState(() => {
-    const saved = loadProgress(mode);
-    return saved ? saved.levelIndex : 0;
-  });
+export function GameScreen({ mode, levelIndex, onBack, onLevelComplete }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
-    const saved = loadProgress(mode);
-    if (saved) return { ...saved.game, selectedContainer: null };
-    const config = mode === "level" ? configForLevel(0) : ENDLESS_DEFAULT_CONFIG;
+    const saved = loadGame(mode, levelIndex);
+    if (saved) return { ...saved, selectedContainer: null };
+    const config = mode === "level" ? configForLevel(levelIndex) : ENDLESS_DEFAULT_CONFIG;
     return buildGameState(config);
   });
   const [invalidShake, setInvalidShake] = useState<number | null>(null);
   const shakeTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialized = useRef(false);
 
-  // Save progress whenever game state or level changes
   useEffect(() => {
     if (initialized.current) {
-      saveProgress(mode, levelIndex, game);
+      saveGame(mode, levelIndex, game);
     }
     initialized.current = true;
   }, [game, levelIndex, mode]);
-
-  const startNewGame = useCallback(
-    (lvlIdx: number) => {
-      const config = mode === "level" ? configForLevel(lvlIdx) : ENDLESS_DEFAULT_CONFIG;
-      const newGame = buildGameState(config);
-      setGame(newGame);
-      setLevelIndex(lvlIdx);
-    },
-    [mode]
-  );
 
   function handleSelect(index: number) {
     if (game.won) return;
@@ -101,6 +90,9 @@ export function GameScreen({ mode, onBack }: GameScreenProps) {
     if (isValidMove(board, selectedContainer, index, config.containerCapacity)) {
       const nextBoard = executeMove(board, selectedContainer, index, config.containerCapacity);
       const won = checkWin(nextBoard, config.containerCapacity);
+      if (won && mode === "level") {
+        markLevelCompleted(levelIndex);
+      }
       setGame((prev) => ({
         ...prev,
         board: nextBoard,
@@ -117,29 +109,24 @@ export function GameScreen({ mode, onBack }: GameScreenProps) {
   }
 
   function handleRestart() {
-    setGame((prev) => {
-      const level = generateLevel(prev.config);
-      return {
-        board: level.initial,
-        selectedContainer: null,
-        moveCount: 0,
-        won: false,
-        config: prev.config,
-      };
-    });
+    const config = mode === "level" ? configForLevel(levelIndex) : ENDLESS_DEFAULT_CONFIG;
+    const newGame = buildGameState(config);
+    setGame(newGame);
   }
 
-  function handleNext() {
-    startNewGame(levelIndex + 1);
+  function handleBackToJourney() {
+    clearSavedGame();
+    onLevelComplete();
   }
 
   const title = mode === "level" ? `Level ${levelIndex + 1}` : "Endless Mode";
+  const backLabel = mode === "level" ? "← Levels" : "← Menu";
 
   return (
     <div className="game-screen">
       <header className="game-header">
         <button className="btn btn--small" onClick={onBack}>
-          ← Menu
+          {backLabel}
         </button>
         <h2 className="game-title">{title}</h2>
         <span className="game-moves">Moves: {game.moveCount}</span>
@@ -161,16 +148,18 @@ export function GameScreen({ mode, onBack }: GameScreenProps) {
             <p>Completed in {game.moveCount} moves</p>
             <div className="win-actions">
               {mode === "level" && (
-                <button className="btn btn--primary" onClick={handleNext}>
-                  Next Level →
+                <button className="btn btn--primary" onClick={handleBackToJourney}>
+                  Continue →
                 </button>
               )}
               <button className="btn" onClick={handleRestart}>
                 {mode === "endless" ? "New Puzzle" : "Replay"}
               </button>
-              <button className="btn" onClick={onBack}>
-                Menu
-              </button>
+              {mode === "endless" && (
+                <button className="btn" onClick={onBack}>
+                  Menu
+                </button>
+              )}
             </div>
           </div>
         </div>

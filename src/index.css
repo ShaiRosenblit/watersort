@@ -130,6 +130,143 @@ body {
 }
 
 /* ============================================
+   Level Journey Screen
+   ============================================ */
+.journey-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.journey-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.journey-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.journey-progress {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.journey-path {
+  flex: 1;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  padding: 20px 24px 40px;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.journey-row {
+  display: flex;
+  position: relative;
+  padding: 6px 0;
+}
+
+.journey-row--left {
+  justify-content: flex-start;
+  padding-left: 20%;
+}
+
+.journey-row--right {
+  justify-content: flex-end;
+  padding-right: 20%;
+}
+
+.journey-connector {
+  position: absolute;
+  width: 2px;
+  background: var(--surface-light);
+  left: 50%;
+  bottom: 100%;
+  height: 12px;
+  transform: translateX(-50%);
+}
+
+.journey-connector--done {
+  background: var(--accent);
+}
+
+.journey-node {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 2px solid var(--surface-light);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.journey-node:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.journey-node--done {
+  background: var(--surface-light);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.journey-node--current {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(233, 69, 96, 0.45);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.journey-node--locked {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.journey-node__number {
+  z-index: 1;
+}
+
+.journey-node__check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(233, 69, 96, 0.35); }
+  50% { box-shadow: 0 0 24px rgba(233, 69, 96, 0.6); }
+}
+
+/* ============================================
    Game Screen
    ============================================ */
 .game-screen {
