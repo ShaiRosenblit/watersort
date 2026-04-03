@@ -50,9 +50,42 @@ export function configForLevel(levelIndex: number): LevelConfig {
   };
 }
 
-export const ENDLESS_DEFAULT_CONFIG: LevelConfig = {
-  numColors: 5,
-  containerCapacity: DEFAULT_CAPACITY,
-  numEmpty: 2,
-  shuffleSteps: 80,
-};
+export interface FreePourTier {
+  id: number;
+  name: string;
+  subtitle: string;
+  config: LevelConfig;
+}
+
+export const FREE_POUR_TIERS: FreePourTier[] = [
+  {
+    id: 1,
+    name: "Puddle",
+    subtitle: "Barely a challenge",
+    config: { numColors: 3, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 40 },
+  },
+  {
+    id: 2,
+    name: "Juice Box",
+    subtitle: "Nice and easy",
+    config: { numColors: 4, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 60 },
+  },
+  {
+    id: 3,
+    name: "Smoothie",
+    subtitle: "A decent blend",
+    config: { numColors: 6, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 80 },
+  },
+  {
+    id: 4,
+    name: "Potion Lab",
+    subtitle: "Things get serious",
+    config: { numColors: 8, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 120 },
+  },
+  {
+    id: 5,
+    name: "Chaos Soup",
+    subtitle: "Pure liquid doom",
+    config: { numColors: 10, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 200 },
+  },
+];

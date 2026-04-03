@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GameMode, GameState, LevelConfig } from "../game/types";
 import { checkWin, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
-import { configForLevel, ENDLESS_DEFAULT_CONFIG } from "../game/config";
+import { configForLevel, FREE_POUR_TIERS } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
 import { Board } from "./Board";
@@ -10,8 +10,9 @@ import { Board } from "./Board";
 interface GameScreenProps {
   mode: GameMode;
   levelIndex: number;
+  freePourTierId: number | null;
   onJourney: () => void;
-  onEndless: () => void;
+  onFreePour: () => void;
   onNextLevel: () => void;
 }
 
@@ -20,19 +21,21 @@ const STORAGE_KEY_GAME = "watersort:game";
 interface SavedGame {
   mode: GameMode;
   levelIndex: number;
+  freePourTierId: number | null;
   game: GameState;
 }
 
-function saveGame(mode: GameMode, levelIndex: number, game: GameState) {
-  localStorage.setItem(STORAGE_KEY_GAME, JSON.stringify({ mode, levelIndex, game }));
+function saveGame(mode: GameMode, levelIndex: number, freePourTierId: number | null, game: GameState) {
+  localStorage.setItem(STORAGE_KEY_GAME, JSON.stringify({ mode, levelIndex, freePourTierId, game }));
 }
 
-function loadGame(mode: GameMode, levelIndex: number): GameState | null {
+function loadGame(mode: GameMode, levelIndex: number, freePourTierId: number | null): GameState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_GAME);
     if (!raw) return null;
     const data: SavedGame = JSON.parse(raw);
     if (data.mode !== mode || data.levelIndex !== levelIndex) return null;
+    if (mode === "endless" && data.freePourTierId !== freePourTierId) return null;
     if (!data.game?.board || !data.game?.config) return null;
     return data.game;
   } catch {
@@ -42,6 +45,12 @@ function loadGame(mode: GameMode, levelIndex: number): GameState | null {
 
 function clearSavedGame() {
   localStorage.removeItem(STORAGE_KEY_GAME);
+}
+
+function getConfig(mode: GameMode, levelIndex: number, tierId: number | null): LevelConfig {
+  if (mode === "level") return configForLevel(levelIndex);
+  const tier = FREE_POUR_TIERS.find((t) => t.id === tierId) ?? FREE_POUR_TIERS[2];
+  return tier.config;
 }
 
 function buildGameState(config: LevelConfig): GameState {
@@ -57,12 +66,11 @@ function buildGameState(config: LevelConfig): GameState {
 
 const ANIM_MS = 350;
 
-export function GameScreen({ mode, levelIndex, onJourney, onEndless, onNextLevel }: GameScreenProps) {
+export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFreePour, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
-    const saved = loadGame(mode, levelIndex);
+    const saved = loadGame(mode, levelIndex, freePourTierId);
     if (saved) return { ...saved, selectedContainer: null };
-    const config = mode === "level" ? configForLevel(levelIndex) : ENDLESS_DEFAULT_CONFIG;
-    return buildGameState(config);
+    return buildGameState(getConfig(mode, levelIndex, freePourTierId));
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
   const [pouredIndex, setPouredIndex] = useState<number | null>(null);
@@ -72,10 +80,10 @@ export function GameScreen({ mode, levelIndex, onJourney, onEndless, onNextLevel
 
   useEffect(() => {
     if (initialized.current) {
-      saveGame(mode, levelIndex, game);
+      saveGame(mode, levelIndex, freePourTierId, game);
     }
     initialized.current = true;
-  }, [game, levelIndex, mode]);
+  }, [game, levelIndex, freePourTierId, mode]);
 
   function flashAnim(
     setter: (v: number | null) => void,
@@ -130,8 +138,7 @@ export function GameScreen({ mode, levelIndex, onJourney, onEndless, onNextLevel
 
   function handleRestart() {
     tapLight();
-    const config = mode === "level" ? configForLevel(levelIndex) : ENDLESS_DEFAULT_CONFIG;
-    setGame(buildGameState(config));
+    setGame(buildGameState(getConfig(mode, levelIndex, freePourTierId)));
   }
 
   function handleContinue() {
@@ -139,7 +146,8 @@ export function GameScreen({ mode, levelIndex, onJourney, onEndless, onNextLevel
     onNextLevel();
   }
 
-  const title = mode === "level" ? `Level ${levelIndex + 1}` : "Endless";
+  const tier = freePourTierId ? FREE_POUR_TIERS.find((t) => t.id === freePourTierId) : null;
+  const title = mode === "level" ? `Level ${levelIndex + 1}` : tier?.name ?? "Free Pour";
 
   return (
     <div className="game-screen">
@@ -165,14 +173,25 @@ export function GameScreen({ mode, levelIndex, onJourney, onEndless, onNextLevel
             <h2>You Win!</h2>
             <p>Completed in {game.moveCount} moves</p>
             <div className="win-actions">
-              {mode === "level" && (
+              {mode === "level" ? (
                 <button className="btn btn--primary" onClick={handleContinue}>
                   Next Level →
                 </button>
+              ) : (
+                <button className="btn btn--primary" onClick={handleRestart}>
+                  Another Round
+                </button>
               )}
-              <button className="btn" onClick={handleRestart}>
-                {mode === "endless" ? "New Puzzle" : "Replay"}
-              </button>
+              {mode === "endless" && (
+                <button className="btn" onClick={onFreePour}>
+                  Change Difficulty
+                </button>
+              )}
+              {mode === "level" && (
+                <button className="btn" onClick={handleRestart}>
+                  Replay
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -184,8 +203,8 @@ export function GameScreen({ mode, levelIndex, onJourney, onEndless, onNextLevel
         </button>
         <div className="game-footer__nav">
           {mode === "level" ? (
-            <button className="btn btn--small btn--subtle" onClick={onEndless}>
-              Endless
+            <button className="btn btn--small btn--subtle" onClick={onFreePour}>
+              Free Pour
             </button>
           ) : (
             <button className="btn btn--small btn--subtle" onClick={onNextLevel}>

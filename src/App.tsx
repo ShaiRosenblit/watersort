@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { GameScreen } from "./components/GameScreen";
 import { LevelJourney } from "./components/LevelJourney";
+import { FreePourPicker } from "./components/FreePourPicker";
 import { getHighestCompleted } from "./game/progress";
 
 type Screen =
   | { kind: "journey" }
   | { kind: "level"; levelIndex: number }
-  | { kind: "endless" };
+  | { kind: "freepour-pick" }
+  | { kind: "freepour"; tierId: number };
 
 function currentLevelIndex(): number {
   return getHighestCompleted() + 1;
@@ -19,8 +21,9 @@ function loadScreen(): Screen {
     const raw = localStorage.getItem(STORAGE_KEY_SCREEN);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s.kind === "journey" || s.kind === "endless") return s;
+      if (s.kind === "journey" || s.kind === "freepour-pick") return s;
       if (s.kind === "level" && typeof s.levelIndex === "number") return s;
+      if (s.kind === "freepour" && typeof s.tierId === "number") return s;
     }
   } catch { /* ignore */ }
   return { kind: "level", levelIndex: currentLevelIndex() };
@@ -47,24 +50,34 @@ export default function App() {
         />
       );
 
+    case "freepour-pick":
+      return (
+        <FreePourPicker
+          onSelect={(tierId) => navigate({ kind: "freepour", tierId })}
+          onBack={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
+        />
+      );
+
     case "level":
       return (
         <GameScreen
           mode="level"
           levelIndex={screen.levelIndex}
+          freePourTierId={null}
           onJourney={() => navigate({ kind: "journey" })}
-          onEndless={() => navigate({ kind: "endless" })}
+          onFreePour={() => navigate({ kind: "freepour-pick" })}
           onNextLevel={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
         />
       );
 
-    case "endless":
+    case "freepour":
       return (
         <GameScreen
           mode="endless"
           levelIndex={0}
+          freePourTierId={screen.tierId}
           onJourney={() => navigate({ kind: "journey" })}
-          onEndless={() => {}}
+          onFreePour={() => navigate({ kind: "freepour-pick" })}
           onNextLevel={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
         />
       );
