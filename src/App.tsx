@@ -61,6 +61,7 @@ export default function App() {
     case "level":
       return (
         <GameScreen
+          key={`level-${screen.levelIndex}`}
           mode="level"
           levelIndex={screen.levelIndex}
           freePourTierId={null}
@@ -73,6 +74,7 @@ export default function App() {
     case "freepour":
       return (
         <GameScreen
+          key={`freepour-${screen.tierId}`}
           mode="endless"
           levelIndex={0}
           freePourTierId={screen.tierId}

@@ -53,8 +53,9 @@ function getConfig(mode: GameMode, levelIndex: number, tierId: number | null): L
   return tier.config;
 }
 
-function buildGameState(config: LevelConfig): GameState {
-  const level = generateLevel(config);
+function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: number | null): GameState {
+  const config = getConfig(mode, levelIndex, freePourTierId);
+  const level = generateLevel(config, mode === "level" ? levelIndex : undefined);
   return {
     board: level.initial,
     selectedContainer: null,
@@ -70,7 +71,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
   const [game, setGame] = useState<GameState>(() => {
     const saved = loadGame(mode, levelIndex, freePourTierId);
     if (saved) return { ...saved, selectedContainer: null };
-    return buildGameState(getConfig(mode, levelIndex, freePourTierId));
+    return buildGameState(mode, levelIndex, freePourTierId);
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
   const [pouredIndex, setPouredIndex] = useState<number | null>(null);
@@ -138,7 +139,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
 
   function handleRestart() {
     tapLight();
-    setGame(buildGameState(getConfig(mode, levelIndex, freePourTierId)));
+    setGame(buildGameState(mode, levelIndex, freePourTierId));
   }
 
   function handleContinue() {
