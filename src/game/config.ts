@@ -1,33 +1,38 @@
 import type { LevelConfig } from "./types";
 
+/**
+ * Tube liquid colors: order is used by the generator (first N for N colors).
+ * Chosen for large hue/lightness separation so many colors stay readable at once
+ * (avoids teal/cyan, orange/amber, indigo/lavender pairs from flatter palettes).
+ */
 export const COLORS = [
-  "#e74c3c", // red
-  "#3498db", // blue
-  "#2ecc71", // green
-  "#f39c12", // orange
-  "#9b59b6", // purple
-  "#1abc9c", // teal
-  "#e67e22", // dark orange
-  "#e84393", // pink
-  "#00cec9", // cyan
-  "#fdcb6e", // yellow
-  "#6c5ce7", // indigo
-  "#a29bfe", // lavender
+  "#e53935", // red
+  "#1e88e5", // blue
+  "#fdd835", // yellow
+  "#43a047", // green
+  "#fb8c00", // orange
+  "#8e24aa", // purple
+  "#00acc1", // cyan
+  "#d81b60", // magenta pink
+  "#558b2f", // olive
+  "#b388ff", // light violet
+  "#00897b", // teal
+  "#6d4c41", // brown
 ];
 
 export const COLOR_NAMES: Record<string, string> = {
-  "#e74c3c": "Red",
-  "#3498db": "Blue",
-  "#2ecc71": "Green",
-  "#f39c12": "Orange",
-  "#9b59b6": "Purple",
-  "#1abc9c": "Teal",
-  "#e67e22": "Dark Orange",
-  "#e84393": "Pink",
-  "#00cec9": "Cyan",
-  "#fdcb6e": "Yellow",
-  "#6c5ce7": "Indigo",
-  "#a29bfe": "Lavender",
+  "#e53935": "Red",
+  "#1e88e5": "Blue",
+  "#fdd835": "Yellow",
+  "#43a047": "Green",
+  "#fb8c00": "Orange",
+  "#8e24aa": "Purple",
+  "#00acc1": "Cyan",
+  "#d81b60": "Pink",
+  "#558b2f": "Olive",
+  "#b388ff": "Violet",
+  "#00897b": "Teal",
+  "#6d4c41": "Brown",
 };
 
 export const DEFAULT_CAPACITY = 4;
