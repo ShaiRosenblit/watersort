@@ -4,6 +4,7 @@ import { checkWin, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
 import { configForLevel, FREE_POUR_TIERS } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
+import { WATERSORT_STORAGE } from "../game/storage";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
 import { Board } from "./Board";
 
@@ -16,8 +17,6 @@ interface GameScreenProps {
   onNextLevel: () => void;
 }
 
-const STORAGE_KEY_GAME = "watersort:game";
-
 interface SavedGame {
   mode: GameMode;
   levelIndex: number;
@@ -26,12 +25,12 @@ interface SavedGame {
 }
 
 function saveGame(mode: GameMode, levelIndex: number, freePourTierId: number | null, game: GameState) {
-  localStorage.setItem(STORAGE_KEY_GAME, JSON.stringify({ mode, levelIndex, freePourTierId, game }));
+  localStorage.setItem(WATERSORT_STORAGE.game, JSON.stringify({ mode, levelIndex, freePourTierId, game }));
 }
 
 function loadGame(mode: GameMode, levelIndex: number, freePourTierId: number | null): GameState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_GAME);
+    const raw = localStorage.getItem(WATERSORT_STORAGE.game);
     if (!raw) return null;
     const data: SavedGame = JSON.parse(raw);
     if (data.mode !== mode || data.levelIndex !== levelIndex) return null;
@@ -44,7 +43,7 @@ function loadGame(mode: GameMode, levelIndex: number, freePourTierId: number | n
 }
 
 function clearSavedGame() {
-  localStorage.removeItem(STORAGE_KEY_GAME);
+  localStorage.removeItem(WATERSORT_STORAGE.game);
 }
 
 function getConfig(mode: GameMode, levelIndex: number, tierId: number | null): LevelConfig {

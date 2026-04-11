@@ -46,6 +46,39 @@ body {
   min-height: 100dvh;
 }
 
+.app-main {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-data-reset {
+  flex-shrink: 0;
+  padding: 2px 8px max(6px, env(safe-area-inset-bottom, 0px));
+  text-align: center;
+}
+
+.app-data-reset__trigger {
+  font-size: 0.62rem;
+  line-height: 1.25;
+  font-weight: 400;
+  color: var(--text-muted);
+  opacity: 0.26;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.app-data-reset__trigger:hover,
+.app-data-reset__trigger:focus-visible {
+  opacity: 0.72;
+  color: var(--text);
+}
+
 /* ============================================
    Buttons
    ============================================ */
@@ -103,7 +136,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  min-height: 100%;
 }
 
 .journey-header {
