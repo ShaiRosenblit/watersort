@@ -64,7 +64,8 @@ function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: numb
   };
 }
 
-const ANIM_MS = 350;
+const SHAKE_MS = 350;
+const POUR_MS = 520;
 
 export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFreePour, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
@@ -73,7 +74,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
     return buildGameState(mode, levelIndex, freePourTierId);
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
-  const [pouredIndex, setPouredIndex] = useState<number | null>(null);
+  const [pourPair, setPourPair] = useState<{ from: number; to: number } | null>(null);
   const shakeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const pourTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialized = useRef(false);
@@ -88,11 +89,18 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
   function flashAnim(
     setter: (v: number | null) => void,
     timerRef: React.RefObject<ReturnType<typeof setTimeout> | undefined>,
-    index: number
+    index: number,
+    durationMs: number
   ) {
     setter(index);
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setter(null), ANIM_MS);
+    timerRef.current = setTimeout(() => setter(null), durationMs);
+  }
+
+  function flashPour(from: number, to: number) {
+    setPourPair({ from, to });
+    clearTimeout(pourTimer.current);
+    pourTimer.current = setTimeout(() => setPourPair(null), POUR_MS);
   }
 
   function handleSelect(index: number) {
@@ -115,7 +123,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
     const { board, selectedContainer, config } = game;
     if (isValidMove(board, selectedContainer, index, config.containerCapacity)) {
       tapMedium();
-      flashAnim(setPouredIndex, pourTimer, index);
+      flashPour(selectedContainer, index);
       const nextBoard = executeMove(board, selectedContainer, index, config.containerCapacity);
       const won = checkWin(nextBoard, config.containerCapacity);
       if (won) {
@@ -131,7 +139,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
       }));
     } else {
       tapError();
-      flashAnim(setShakingIndex, shakeTimer, index);
+      flashAnim(setShakingIndex, shakeTimer, index, SHAKE_MS);
       setGame((prev) => ({ ...prev, selectedContainer: null }));
     }
   }
@@ -162,7 +170,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
           capacity={game.config.containerCapacity}
           selectedIndex={game.selectedContainer}
           shakingIndex={shakingIndex}
-          pouredIndex={pouredIndex}
+          pourPair={pourPair}
           onSelectContainer={handleSelect}
         />
       </div>
