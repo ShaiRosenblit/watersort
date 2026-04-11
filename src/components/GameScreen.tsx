@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import type { GameMode, GameState, LevelConfig } from "../game/types";
-import { checkWin, executeMove, isValidMove } from "../game/logic";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { GameMode, GameState, LevelConfig, UndoSnapshot } from "../game/types";
+import { checkWin, cloneBoard, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
-import { configForLevel, FREE_POUR_TIERS } from "../game/config";
+import { configForLevel, FREE_POUR_TIERS, undoBudgetForPuzzle } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
 import { WATERSORT_STORAGE } from "../game/storage";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
@@ -22,13 +22,44 @@ interface SavedGame {
   levelIndex: number;
   freePourTierId: number | null;
   game: GameState;
+  undoStack?: UndoSnapshot[];
+  undosUsed?: number;
 }
 
-function saveGame(mode: GameMode, levelIndex: number, freePourTierId: number | null, game: GameState) {
-  localStorage.setItem(WATERSORT_STORAGE.game, JSON.stringify({ mode, levelIndex, freePourTierId, game }));
+function saveGame(
+  mode: GameMode,
+  levelIndex: number,
+  freePourTierId: number | null,
+  game: GameState,
+  undoStack: UndoSnapshot[],
+  undosUsed: number
+) {
+  localStorage.setItem(
+    WATERSORT_STORAGE.game,
+    JSON.stringify({ mode, levelIndex, freePourTierId, game, undoStack, undosUsed })
+  );
 }
 
-function loadGame(mode: GameMode, levelIndex: number, freePourTierId: number | null): GameState | null {
+function parseUndoStack(raw: unknown): UndoSnapshot[] {
+  if (!Array.isArray(raw)) return [];
+  const out: UndoSnapshot[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || !Array.isArray((item as UndoSnapshot).board)) continue;
+    const u = item as UndoSnapshot;
+    out.push({
+      board: cloneBoard(u.board),
+      moveCount: typeof u.moveCount === "number" ? u.moveCount : 0,
+      won: Boolean(u.won),
+    });
+  }
+  return out;
+}
+
+function loadGame(
+  mode: GameMode,
+  levelIndex: number,
+  freePourTierId: number | null
+): { game: GameState; undoStack: UndoSnapshot[]; undosUsed: number } | null {
   try {
     const raw = localStorage.getItem(WATERSORT_STORAGE.game);
     if (!raw) return null;
@@ -36,7 +67,13 @@ function loadGame(mode: GameMode, levelIndex: number, freePourTierId: number | n
     if (data.mode !== mode || data.levelIndex !== levelIndex) return null;
     if (mode === "endless" && data.freePourTierId !== freePourTierId) return null;
     if (!data.game?.board || !data.game?.config) return null;
-    return data.game;
+    const rawUsed = typeof data.undosUsed === "number" && data.undosUsed >= 0 ? data.undosUsed : 0;
+    const budget = undoBudgetForPuzzle(data.mode, data.levelIndex, data.game.config.numColors);
+    return {
+      game: data.game,
+      undoStack: parseUndoStack(data.undoStack),
+      undosUsed: Math.min(rawUsed, budget),
+    };
   } catch {
     return null;
   }
@@ -70,8 +107,14 @@ const POUR_MS = 520;
 export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFreePour, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
     const saved = loadGame(mode, levelIndex, freePourTierId);
-    if (saved) return { ...saved, selectedContainer: null };
+    if (saved) return { ...saved.game, selectedContainer: null };
     return buildGameState(mode, levelIndex, freePourTierId);
+  });
+  const [undoStack, setUndoStack] = useState<UndoSnapshot[]>(() => {
+    return loadGame(mode, levelIndex, freePourTierId)?.undoStack ?? [];
+  });
+  const [undosUsed, setUndosUsed] = useState(() => {
+    return loadGame(mode, levelIndex, freePourTierId)?.undosUsed ?? 0;
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
   const [pourPair, setPourPair] = useState<{ from: number; to: number } | null>(null);
@@ -79,12 +122,20 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
   const pourTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialized = useRef(false);
 
+  const undoBudget = useMemo(
+    () => undoBudgetForPuzzle(mode, levelIndex, game.config.numColors),
+    [mode, levelIndex, game.config.numColors]
+  );
+
+  const undosLeft = undoBudget - undosUsed;
+  const canUndo = undoStack.length > 0 && undosLeft > 0 && !game.won;
+
   useEffect(() => {
     if (initialized.current) {
-      saveGame(mode, levelIndex, freePourTierId, game);
+      saveGame(mode, levelIndex, freePourTierId, game, undoStack, undosUsed);
     }
     initialized.current = true;
-  }, [game, levelIndex, freePourTierId, mode]);
+  }, [game, undoStack, undosUsed, levelIndex, freePourTierId, mode]);
 
   function flashAnim(
     setter: (v: number | null) => void,
@@ -124,6 +175,12 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
     if (isValidMove(board, selectedContainer, index, config.containerCapacity)) {
       tapMedium();
       flashPour(selectedContainer, index);
+      const snapshot: UndoSnapshot = {
+        board: cloneBoard(board),
+        moveCount: game.moveCount,
+        won: game.won,
+      };
+      setUndoStack((prev) => [...prev, snapshot]);
       const nextBoard = executeMove(board, selectedContainer, index, config.containerCapacity);
       const won = checkWin(nextBoard, config.containerCapacity);
       if (won) {
@@ -146,7 +203,32 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
 
   function handleRestart() {
     tapLight();
+    setUndoStack([]);
+    setUndosUsed(0);
     setGame(buildGameState(mode, levelIndex, freePourTierId));
+  }
+
+  function handleUndo() {
+    if (!canUndo) {
+      tapError();
+      return;
+    }
+    tapLight();
+    setUndoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const snap = prev[prev.length - 1];
+      setGame((g) => ({
+        ...g,
+        board: cloneBoard(snap.board),
+        moveCount: snap.moveCount,
+        won: snap.won,
+        selectedContainer: null,
+      }));
+      return prev.slice(0, -1);
+    });
+    setUndosUsed((n) => n + 1);
+    setPourPair(null);
+    clearTimeout(pourTimer.current);
   }
 
   function handleContinue() {
@@ -206,9 +288,31 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
       )}
 
       <div className="game-footer">
-        <button className="btn btn--small" onClick={handleRestart}>
-          Restart
-        </button>
+        <div className="game-footer__primary">
+          <button className="btn btn--small" onClick={handleRestart}>
+            Restart
+          </button>
+          <button
+            type="button"
+            className="btn btn--small btn--subtle"
+            disabled={!canUndo}
+            onClick={handleUndo}
+            title={
+              game.won
+                ? "Undo is disabled after a win"
+                : undosLeft <= 0
+                  ? "No undo credits left"
+                  : "Take back your last pour"
+            }
+          >
+            Undo
+          </button>
+          <span className="game-footer__undo-meta" aria-live="polite">
+            {undosUsed > 0 ? `${undosUsed} undo${undosUsed === 1 ? "" : "s"} used` : "No undos yet"}
+            <span className="game-footer__undo-meta-sep"> · </span>
+            {undosLeft > 0 ? `${undosLeft} left` : "0 left"}
+          </span>
+        </div>
         <div className="game-footer__nav">
           {mode === "level" ? (
             <button className="btn btn--small btn--subtle" onClick={onFreePour}>

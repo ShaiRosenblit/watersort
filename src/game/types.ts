@@ -25,3 +25,10 @@ export interface GameState {
   won: boolean;
   config: LevelConfig;
 }
+
+/** Snapshot stored before each successful pour for undo. */
+export interface UndoSnapshot {
+  board: BoardState;
+  moveCount: number;
+  won: boolean;
+}

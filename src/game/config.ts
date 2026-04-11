@@ -1,4 +1,4 @@
-import type { LevelConfig } from "./types";
+import type { GameMode, LevelConfig } from "./types";
 
 /**
  * Tube liquid colors: order is used by the generator (first N for N colors).
@@ -37,6 +37,18 @@ export const COLOR_NAMES: Record<string, string> = {
 
 export const DEFAULT_CAPACITY = 4;
 export const TOTAL_LEVELS = 1000;
+
+/**
+ * Max undo actions per puzzle. Tighter on harder journey tiers so undo feels earned;
+ * Free Pour scales slightly with color count.
+ */
+export function undoBudgetForPuzzle(mode: GameMode, levelIndex: number, numColors: number): number {
+  if (mode === "endless") {
+    return Math.min(8, 4 + Math.min(4, numColors - 2));
+  }
+  const tier = Math.min(4, Math.floor(levelIndex / 200));
+  return Math.max(4, Math.min(9, 5 + Math.floor(numColors / 3) - tier));
+}
 
 /**
  * Difficulty curve for 1000 levels.

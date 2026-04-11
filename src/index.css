@@ -107,6 +107,12 @@ body {
   transition: transform 0.08s;
 }
 
+.btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn--primary {
   background: var(--accent);
   border-color: var(--accent);
@@ -451,10 +457,29 @@ body {
 
 .game-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 16px;
+  gap: 10px;
+}
+
+.game-footer__primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+}
+
+.game-footer__undo-meta {
+  font-size: 0.68rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+  max-width: 11rem;
+}
+
+.game-footer__undo-meta-sep {
+  opacity: 0.65;
 }
 
 .game-footer__nav {
