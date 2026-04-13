@@ -102,7 +102,7 @@ function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: numb
 }
 
 const SHAKE_MS = 350;
-const POUR_MS = 520;
+const POUR_MS = 700;
 
 export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFreePour, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
