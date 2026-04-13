@@ -3,6 +3,7 @@ import { GameScreen } from "./components/GameScreen";
 import { LevelJourney } from "./components/LevelJourney";
 import { FreePourPicker } from "./components/FreePourPicker";
 import { getHighestCompleted } from "./game/progress";
+import { tapMedium } from "./game/haptics";
 import { clearAllLocalProgress, WATERSORT_STORAGE } from "./game/storage";
 
 type Screen =
@@ -48,6 +49,7 @@ export default function App() {
     ) {
       return;
     }
+    tapMedium();
     clearAllLocalProgress();
     navigate({ kind: "level", levelIndex: 0 });
   }

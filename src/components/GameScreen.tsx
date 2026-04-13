@@ -213,7 +213,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
       tapError();
       return;
     }
-    tapLight();
+    tapMedium();
     setUndoStack((prev) => {
       if (prev.length === 0) return prev;
       const snap = prev[prev.length - 1];
@@ -232,7 +232,23 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
   }
 
   function handleContinue() {
+    tapLight();
     clearSavedGame();
+    onNextLevel();
+  }
+
+  function goFreePour() {
+    tapLight();
+    onFreePour();
+  }
+
+  function goJourney() {
+    tapLight();
+    onJourney();
+  }
+
+  function goLevels() {
+    tapLight();
     onNextLevel();
   }
 
@@ -273,7 +289,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
                 </button>
               )}
               {mode === "endless" && (
-                <button className="btn" onClick={onFreePour}>
+                <button className="btn" onClick={goFreePour}>
                   Change Difficulty
                 </button>
               )}
@@ -315,15 +331,15 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
         </div>
         <div className="game-footer__nav">
           {mode === "level" ? (
-            <button className="btn btn--small btn--subtle" onClick={onFreePour}>
+            <button className="btn btn--small btn--subtle" onClick={goFreePour}>
               Free Pour
             </button>
           ) : (
-            <button className="btn btn--small btn--subtle" onClick={onNextLevel}>
+            <button className="btn btn--small btn--subtle" onClick={goLevels}>
               Levels
             </button>
           )}
-          <button className="btn btn--small btn--subtle" onClick={onJourney}>
+          <button className="btn btn--small btn--subtle" onClick={goJourney}>
             Journey
           </button>
         </div>

@@ -12,10 +12,15 @@ export function FreePourPicker({ onSelect, onBack }: FreePourPickerProps) {
     onSelect(id);
   }
 
+  function handleBack() {
+    tapLight();
+    onBack();
+  }
+
   return (
     <div className="picker-screen">
       <header className="picker-header">
-        <button className="btn btn--small" onClick={onBack}>
+        <button className="btn btn--small" onClick={handleBack}>
           ← Play
         </button>
         <h2 className="picker-title">Free Pour</h2>

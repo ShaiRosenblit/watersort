@@ -30,12 +30,17 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
     onSelectLevel(i);
   }
 
+  function handleBack() {
+    tapLight();
+    onBack();
+  }
+
   const pct = Math.round(((highestCompleted + 1) / TOTAL_LEVELS) * 100);
 
   return (
     <div className="journey-screen">
       <header className="journey-header">
-        <button className="btn btn--small" onClick={onBack}>
+        <button className="btn btn--small" onClick={handleBack}>
           ← Play
         </button>
         <h2 className="journey-title">Journey</h2>
