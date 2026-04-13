@@ -672,6 +672,10 @@ body {
   width: 100%;
   height: var(--tube-segment-height);
   transition: background-color 0.15s;
+  /* Thin rim + floor so neighboring liquids read as separate slabs */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
 }
 
 .tube__segment--empty {

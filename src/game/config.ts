@@ -2,37 +2,37 @@ import type { GameMode, LevelConfig } from "./types";
 
 /**
  * Tube liquid colors: order is used by the generator (first N for N colors).
- * Chosen for large hue/lightness separation so many colors stay readable at once
- * (avoids teal/cyan, orange/amber, indigo/lavender pairs from flatter palettes).
+ * Tuned for dark UI: strong hue gaps, mixed lightness (some dark, some neon)
+ * so pink/orange/blue/cyan/purple families do not blend on screen.
  */
 export const COLORS = [
-  "#e53935", // red
-  "#1e88e5", // blue
-  "#fdd835", // yellow
-  "#43a047", // green
-  "#fb8c00", // orange
-  "#8e24aa", // purple
-  "#00acc1", // cyan
-  "#d81b60", // magenta pink
-  "#558b2f", // olive
-  "#b388ff", // light violet
-  "#00897b", // teal
-  "#6d4c41", // brown
+  "#e42138", // scarlet
+  "#ffd600", // yellow (early triad: far from red & blue)
+  "#0051d5", // cobalt blue
+  "#00a832", // green
+  "#ff7a00", // pure orange (not red-orange)
+  "#6a00d4", // electric purple
+  "#00b8d9", // turquoise (brighter than teal below)
+  "#b0006f", // wine / dark raspberry (not hot pink)
+  "#5d4037", // brown
+  "#cdda00", // lime yellow‑green
+  "#004d40", // deep teal (nearly black‑green, reads vs cyan)
+  "#3f2373", // deep indigo (vs cobalt & purple)
 ];
 
 export const COLOR_NAMES: Record<string, string> = {
-  "#e53935": "Red",
-  "#1e88e5": "Blue",
-  "#fdd835": "Yellow",
-  "#43a047": "Green",
-  "#fb8c00": "Orange",
-  "#8e24aa": "Purple",
-  "#00acc1": "Cyan",
-  "#d81b60": "Pink",
-  "#558b2f": "Olive",
-  "#b388ff": "Violet",
-  "#00897b": "Teal",
-  "#6d4c41": "Brown",
+  "#e42138": "Red",
+  "#ffd600": "Yellow",
+  "#0051d5": "Blue",
+  "#00a832": "Green",
+  "#ff7a00": "Orange",
+  "#6a00d4": "Purple",
+  "#00b8d9": "Turquoise",
+  "#b0006f": "Raspberry",
+  "#5d4037": "Brown",
+  "#cdda00": "Lime",
+  "#004d40": "Deep teal",
+  "#3f2373": "Indigo",
 };
 
 export const DEFAULT_CAPACITY = 4;
