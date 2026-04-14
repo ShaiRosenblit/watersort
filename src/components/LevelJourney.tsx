@@ -6,7 +6,7 @@ import { tapLight } from "../game/haptics";
 const WINDOW_BEFORE = 3;
 const WINDOW_AFTER = 4;
 const GOD_TAP_COUNT = 5;
-const GOD_TAP_WINDOW_MS = 1200;
+const GOD_TAP_WINDOW_MS = 3000;
 
 interface LevelJourneyProps {
   onSelectLevel: (levelIndex: number) => void;
@@ -83,6 +83,7 @@ export function LevelJourney({ onSelectLevel, onBack, onOpenTap }: LevelJourneyP
         </div>
         <span
           className="journey-bar__label"
+          style={{ userSelect: "none", WebkitUserSelect: "none" }}
           onClick={handleSecretTap}
         >
           {highestCompleted + 1} / {TOTAL_LEVELS} completed
