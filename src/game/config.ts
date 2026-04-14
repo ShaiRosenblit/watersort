@@ -46,19 +46,20 @@ export function undoBudgetForPuzzle(mode: GameMode, levelIndex: number, numColor
   if (mode === "endless") {
     return Math.min(8, 4 + Math.min(4, numColors - 2));
   }
-  const tier = Math.min(4, Math.floor(levelIndex / 200));
+  const tier = Math.min(4, Math.floor(levelIndex / 60));
   return Math.max(4, Math.min(9, 5 + Math.floor(numColors / 3) - tier));
 }
 
 /**
- * Difficulty curve for 1000 levels.
+ * Difficulty curve for 1000 levels — steep ramp, easy start.
  *
- *   1–20   : 3 colors, gentle shuffle          (warm-up)
- *   21–50  : 3→4 colors, moderate shuffle       (getting started)
- *   51–100 : 4→6 colors, growing shuffle        (intermediate)
- *   101–300: 6→8 colors, challenging shuffle     (hard)
- *   301–600: 8→10 colors, tough shuffle          (very hard)
- *   601–1000: 10→12 colors, maximum shuffle      (extreme)
+ *   1–10   : 3 colors   (brief warm-up)
+ *   11–20  : 3→4 colors (getting started)
+ *   21–40  : 4→6 colors (intermediate)
+ *   41–80  : 6→8 colors (hard)
+ *   81–150 : 8→10 colors (very hard)
+ *   151–300: 10→12 colors (extreme)
+ *   301+   : 12 colors, maxed out
  */
 export function configForLevel(levelIndex: number): LevelConfig {
   const n = levelIndex; // 0-indexed
@@ -66,29 +67,32 @@ export function configForLevel(levelIndex: number): LevelConfig {
   let numColors: number;
   let shuffleSteps: number;
 
-  if (n < 20) {
+  if (n < 10) {
     numColors = 3;
-    shuffleSteps = 20 + n * 2;
-  } else if (n < 50) {
-    const t = (n - 20) / 30;
+    shuffleSteps = 20 + n * 4;
+  } else if (n < 20) {
+    const t = (n - 10) / 10;
     numColors = Math.round(3 + t);        // 3 → 4
     shuffleSteps = 60 + Math.round(t * 30);
-  } else if (n < 100) {
-    const t = (n - 50) / 50;
+  } else if (n < 40) {
+    const t = (n - 20) / 20;
     numColors = Math.round(4 + t * 2);    // 4 → 6
     shuffleSteps = 90 + Math.round(t * 40);
-  } else if (n < 300) {
-    const t = (n - 100) / 200;
+  } else if (n < 80) {
+    const t = (n - 40) / 40;
     numColors = Math.round(6 + t * 2);    // 6 → 8
     shuffleSteps = 130 + Math.round(t * 50);
-  } else if (n < 600) {
-    const t = (n - 300) / 300;
+  } else if (n < 150) {
+    const t = (n - 80) / 70;
     numColors = Math.round(8 + t * 2);    // 8 → 10
     shuffleSteps = 180 + Math.round(t * 40);
-  } else {
-    const t = Math.min((n - 600) / 400, 1);
+  } else if (n < 300) {
+    const t = (n - 150) / 150;
     numColors = Math.round(10 + t * 2);   // 10 → 12
     shuffleSteps = 220 + Math.round(t * 30);
+  } else {
+    numColors = 12;
+    shuffleSteps = 250;
   }
 
   numColors = Math.min(numColors, COLORS.length);
