@@ -419,6 +419,106 @@ body {
 }
 
 /* ============================================
+   Custom card variant (in tier picker)
+   ============================================ */
+.picker-card--custom {
+  border-style: dashed;
+}
+
+.picker-card__rank--custom {
+  background: transparent;
+  border: 2px dashed var(--surface-light);
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.picker-card--custom:hover .picker-card__rank--custom {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ============================================
+   Custom Free Pour Picker
+   ============================================ */
+.custom-params {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0 24px;
+}
+
+.custom-param {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-param__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.custom-param__control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.custom-param__btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--surface-light);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+
+.custom-param__btn:hover:not(:disabled) {
+  background: var(--surface-light);
+  border-color: var(--accent);
+}
+
+.custom-param__btn:active:not(:disabled) {
+  transform: scale(0.9);
+  transition: transform 0.08s;
+}
+
+.custom-param__btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.custom-param__value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  min-width: 3.5ch;
+  text-align: center;
+  color: var(--text);
+}
+
+.custom-param__hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.custom-play {
+  margin-top: auto;
+  padding-bottom: 16px;
+}
+
+/* ============================================
    Game Screen
    ============================================ */
 .game-screen {

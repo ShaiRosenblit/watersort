@@ -3,13 +3,19 @@ import { tapLight } from "../game/haptics";
 
 interface FreePourPickerProps {
   onSelect: (tierId: number) => void;
+  onCustom: () => void;
   onBack: () => void;
 }
 
-export function FreePourPicker({ onSelect, onBack }: FreePourPickerProps) {
+export function FreePourPicker({ onSelect, onCustom, onBack }: FreePourPickerProps) {
   function handlePick(id: number) {
     tapLight();
     onSelect(id);
+  }
+
+  function handleCustom() {
+    tapLight();
+    onCustom();
   }
 
   function handleBack() {
@@ -44,6 +50,13 @@ export function FreePourPicker({ onSelect, onBack }: FreePourPickerProps) {
             <span className="picker-card__colors">{tier.config.numColors} colors</span>
           </button>
         ))}
+        <button className="picker-card picker-card--custom" onClick={handleCustom}>
+          <span className="picker-card__rank picker-card__rank--custom">✦</span>
+          <div className="picker-card__text">
+            <span className="picker-card__name">Custom</span>
+            <span className="picker-card__sub">Pick your own parameters</span>
+          </div>
+        </button>
       </div>
     </div>
   );

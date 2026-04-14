@@ -12,6 +12,7 @@ interface GameScreenProps {
   mode: GameMode;
   levelIndex: number;
   freePourTierId: number | null;
+  customConfig: LevelConfig | null;
   onJourney: () => void;
   onFreePour: () => void;
   onNextLevel: () => void;
@@ -83,14 +84,15 @@ function clearSavedGame() {
   localStorage.removeItem(WATERSORT_STORAGE.game);
 }
 
-function getConfig(mode: GameMode, levelIndex: number, tierId: number | null): LevelConfig {
+function getConfig(mode: GameMode, levelIndex: number, tierId: number | null, customConfig: LevelConfig | null): LevelConfig {
+  if (customConfig) return customConfig;
   if (mode === "level") return configForLevel(levelIndex);
   const tier = FREE_POUR_TIERS.find((t) => t.id === tierId) ?? FREE_POUR_TIERS[2];
   return tier.config;
 }
 
-function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: number | null): GameState {
-  const config = getConfig(mode, levelIndex, freePourTierId);
+function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: number | null, customConfig: LevelConfig | null): GameState {
+  const config = getConfig(mode, levelIndex, freePourTierId, customConfig);
   const level = generateLevel(config, mode === "level" ? levelIndex : undefined);
   return {
     board: level.initial,
@@ -104,11 +106,11 @@ function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: numb
 const SHAKE_MS = 350;
 const POUR_MS = 520;
 
-export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFreePour, onNextLevel }: GameScreenProps) {
+export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJourney, onFreePour, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
     const saved = loadGame(mode, levelIndex, freePourTierId);
     if (saved) return { ...saved.game, selectedContainer: null };
-    return buildGameState(mode, levelIndex, freePourTierId);
+    return buildGameState(mode, levelIndex, freePourTierId, customConfig);
   });
   const [undoStack, setUndoStack] = useState<UndoSnapshot[]>(() => {
     return loadGame(mode, levelIndex, freePourTierId)?.undoStack ?? [];
@@ -205,7 +207,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
     tapLight();
     setUndoStack([]);
     setUndosUsed(0);
-    setGame(buildGameState(mode, levelIndex, freePourTierId));
+    setGame(buildGameState(mode, levelIndex, freePourTierId, customConfig));
   }
 
   function handleUndo() {
@@ -253,7 +255,11 @@ export function GameScreen({ mode, levelIndex, freePourTierId, onJourney, onFree
   }
 
   const tier = freePourTierId ? FREE_POUR_TIERS.find((t) => t.id === freePourTierId) : null;
-  const title = mode === "level" ? `Level ${levelIndex + 1}` : tier?.name ?? "Free Pour";
+  const title = mode === "level"
+    ? `Level ${levelIndex + 1}`
+    : customConfig
+      ? "Custom"
+      : tier?.name ?? "Free Pour";
 
   return (
     <div className="game-screen">
