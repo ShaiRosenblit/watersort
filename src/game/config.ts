@@ -3,21 +3,40 @@ import type { LevelConfig } from "./types";
 /**
  * Tube liquid colors: order is used by the generator (first N for N colors).
  * Tuned for dark UI: strong hue gaps, mixed lightness (some dark, some neon)
- * so pink/orange/blue/cyan/purple families do not blend on screen.
+ * so adjacent families do not blend on screen.
+ * First 12 are the "classic" set; extras unlock in Craft mode.
  */
 export const COLORS = [
-  "#e42138", // scarlet
-  "#ffd600", // yellow (early triad: far from red & blue)
-  "#0051d5", // cobalt blue
-  "#00a832", // green
-  "#ff7a00", // pure orange (not red-orange)
-  "#6a00d4", // electric purple
-  "#00b8d9", // turquoise (brighter than teal below)
-  "#b0006f", // wine / dark raspberry (not hot pink)
-  "#5d4037", // brown
-  "#cdda00", // lime yellow‑green
-  "#004d40", // deep teal (nearly black‑green, reads vs cyan)
-  "#3f2373", // deep indigo (vs cobalt & purple)
+  "#e42138", //  1 scarlet
+  "#ffd600", //  2 yellow
+  "#0051d5", //  3 cobalt blue
+  "#00a832", //  4 green
+  "#ff7a00", //  5 pure orange
+  "#6a00d4", //  6 electric purple
+  "#00b8d9", //  7 turquoise
+  "#b0006f", //  8 wine / dark raspberry
+  "#5d4037", //  9 brown
+  "#cdda00", // 10 lime yellow-green
+  "#004d40", // 11 deep teal
+  "#3f2373", // 12 deep indigo
+  "#ff69b4", // 13 hot pink
+  "#808080", // 14 gray
+  "#00e676", // 15 neon green
+  "#e040fb", // 16 magenta
+  "#1a237e", // 17 navy
+  "#ffab40", // 18 amber
+  "#90caf9", // 19 sky blue
+  "#a0522d", // 20 sienna
+  "#76ff03", // 21 chartreuse
+  "#ad1457", // 22 crimson
+  "#69f0ae", // 23 mint
+  "#b388ff", // 24 lavender
+  "#ff6e40", // 25 deep orange
+  "#455a64", // 26 blue-gray
+  "#c62828", // 27 dark red
+  "#00838f", // 28 dark cyan
+  "#f8bbd0", // 29 blush
+  "#d4e157", // 30 yellow-green
 ];
 
 export const COLOR_NAMES: Record<string, string> = {
@@ -31,8 +50,26 @@ export const COLOR_NAMES: Record<string, string> = {
   "#b0006f": "Raspberry",
   "#5d4037": "Brown",
   "#cdda00": "Lime",
-  "#004d40": "Deep teal",
+  "#004d40": "Deep Teal",
   "#3f2373": "Indigo",
+  "#ff69b4": "Hot Pink",
+  "#808080": "Gray",
+  "#00e676": "Neon Green",
+  "#e040fb": "Magenta",
+  "#1a237e": "Navy",
+  "#ffab40": "Amber",
+  "#90caf9": "Sky Blue",
+  "#a0522d": "Sienna",
+  "#76ff03": "Chartreuse",
+  "#ad1457": "Crimson",
+  "#69f0ae": "Mint",
+  "#b388ff": "Lavender",
+  "#ff6e40": "Deep Orange",
+  "#455a64": "Blue-Gray",
+  "#c62828": "Dark Red",
+  "#00838f": "Dark Cyan",
+  "#f8bbd0": "Blush",
+  "#d4e157": "Yellow-Green",
 };
 
 export const DEFAULT_CAPACITY = 4;

@@ -10,7 +10,7 @@ interface OpenTapCraftProps {
 const MIN_COLORS = 2;
 const MAX_COLORS = COLORS.length;
 const MIN_EMPTY = 1;
-const MAX_EMPTY = 5;
+const MAX_EMPTY = 10;
 const MIN_SHUFFLES = 20;
 const MAX_SHUFFLES = 300;
 const SHUFFLE_STEP = 10;
