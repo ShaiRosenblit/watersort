@@ -79,6 +79,13 @@ body {
   color: var(--text);
 }
 
+.app-build-info {
+  display: block;
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  opacity: 0.22;
+}
+
 /* ============================================
    Buttons
    ============================================ */

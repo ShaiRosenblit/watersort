@@ -142,6 +142,9 @@ export default function App() {
         >
           Local data…
         </button>
+        <span className="app-build-info">
+          build {new Date(__COMMIT_TIME__).toLocaleString()}
+        </span>
       </footer>
     </>
   );
