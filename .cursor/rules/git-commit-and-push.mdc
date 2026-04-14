@@ -1,0 +1,18 @@
+---
+description: When a task is finished, commit changes and push to the remote
+alwaysApply: true
+---
+
+# Git: commit and push after each finished task
+
+When you consider a **task finished** (the user’s request is fully done, tests/build pass if you ran them, and there is nothing left you were asked to do in that turn):
+
+1. **Commit** all relevant changes with a clear message that describes what was done.
+2. **Push** to the configured remote on the current branch (`git push`, or `git push -u origin <branch>` if upstream is not set).
+
+Skip commit/push only when:
+
+- There are **no** changes to commit, or the user asked you **not** to commit/push.
+- There is **no** remote or push fails for an unavoidable reason—explain briefly and give the exact commands to run locally.
+
+Do not end a completed task with only local edits: leave the repo **committed and pushed** when possible.

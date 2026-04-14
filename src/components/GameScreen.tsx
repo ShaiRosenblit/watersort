@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { GameMode, GameState, LevelConfig, UndoSnapshot } from "../game/types";
+import type { BoardState, GameMode, GameState, LevelConfig, UndoSnapshot } from "../game/types";
 import { checkWin, cloneBoard, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
 import { configForLevel, OPEN_TAP_TIERS, undoBudgetForPuzzle } from "../game/config";
@@ -23,6 +23,7 @@ interface SavedGame {
   levelIndex: number;
   openTapTierId: number | null;
   game: GameState;
+  initialBoard?: BoardState;
   undoStack?: UndoSnapshot[];
   undosUsed?: number;
 }
@@ -32,12 +33,13 @@ function saveGame(
   levelIndex: number,
   openTapTierId: number | null,
   game: GameState,
+  initialBoard: BoardState,
   undoStack: UndoSnapshot[],
   undosUsed: number
 ) {
   localStorage.setItem(
     WATERSORT_STORAGE.game,
-    JSON.stringify({ mode, levelIndex, openTapTierId, game, undoStack, undosUsed })
+    JSON.stringify({ mode, levelIndex, openTapTierId, game, initialBoard, undoStack, undosUsed })
   );
 }
 
@@ -60,7 +62,7 @@ function loadGame(
   mode: GameMode,
   levelIndex: number,
   openTapTierId: number | null
-): { game: GameState; undoStack: UndoSnapshot[]; undosUsed: number } | null {
+): { game: GameState; initialBoard: BoardState; undoStack: UndoSnapshot[]; undosUsed: number } | null {
   try {
     const raw = localStorage.getItem(WATERSORT_STORAGE.game);
     if (!raw) return null;
@@ -70,8 +72,12 @@ function loadGame(
     if (!data.game?.board || !data.game?.config) return null;
     const rawUsed = typeof data.undosUsed === "number" && data.undosUsed >= 0 ? data.undosUsed : 0;
     const budget = undoBudgetForPuzzle(data.mode, data.levelIndex, data.game.config.numColors);
+    const initialBoard = Array.isArray(data.initialBoard)
+      ? cloneBoard(data.initialBoard)
+      : cloneBoard(data.game.board);
     return {
       game: data.game,
+      initialBoard,
       undoStack: parseUndoStack(data.undoStack),
       undosUsed: Math.min(rawUsed, budget),
     };
@@ -112,6 +118,11 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
     if (saved) return { ...saved.game, selectedContainer: null };
     return buildGameState(mode, levelIndex, openTapTierId, customConfig);
   });
+  const [initialBoard, setInitialBoard] = useState<BoardState>(() => {
+    const saved = loadGame(mode, levelIndex, openTapTierId);
+    if (saved) return saved.initialBoard;
+    return cloneBoard(game.board);
+  });
   const [undoStack, setUndoStack] = useState<UndoSnapshot[]>(() => {
     return loadGame(mode, levelIndex, openTapTierId)?.undoStack ?? [];
   });
@@ -134,10 +145,10 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
 
   useEffect(() => {
     if (initialized.current) {
-      saveGame(mode, levelIndex, openTapTierId, game, undoStack, undosUsed);
+      saveGame(mode, levelIndex, openTapTierId, game, initialBoard, undoStack, undosUsed);
     }
     initialized.current = true;
-  }, [game, undoStack, undosUsed, levelIndex, openTapTierId, mode]);
+  }, [game, initialBoard, undoStack, undosUsed, levelIndex, openTapTierId, mode]);
 
   function flashAnim(
     setter: (v: number | null) => void,
@@ -207,7 +218,26 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
     tapLight();
     setUndoStack([]);
     setUndosUsed(0);
-    setGame(buildGameState(mode, levelIndex, openTapTierId, customConfig));
+    if (mode === "endless") {
+      setGame((prev) => ({
+        ...prev,
+        board: cloneBoard(initialBoard),
+        selectedContainer: null,
+        moveCount: 0,
+        won: false,
+      }));
+    } else {
+      setGame(buildGameState(mode, levelIndex, openTapTierId, customConfig));
+    }
+  }
+
+  function handleNewGame() {
+    tapLight();
+    setUndoStack([]);
+    setUndosUsed(0);
+    const fresh = buildGameState(mode, levelIndex, openTapTierId, customConfig);
+    setInitialBoard(cloneBoard(fresh.board));
+    setGame(fresh);
   }
 
   function handleUndo() {
@@ -286,23 +316,26 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
             <p>Completed in {game.moveCount} moves</p>
             <div className="win-actions">
               {mode === "level" ? (
-                <button className="btn btn--primary" onClick={handleContinue}>
-                  Next Level →
-                </button>
+                <>
+                  <button className="btn btn--primary" onClick={handleContinue}>
+                    Next Level →
+                  </button>
+                  <button className="btn" onClick={handleRestart}>
+                    Replay
+                  </button>
+                </>
               ) : (
-                <button className="btn btn--primary" onClick={handleRestart}>
-                  Another Round
-                </button>
-              )}
-              {mode === "endless" && (
-                <button className="btn" onClick={goOpenTap}>
-                  Change Difficulty
-                </button>
-              )}
-              {mode === "level" && (
-                <button className="btn" onClick={handleRestart}>
-                  Replay
-                </button>
+                <>
+                  <button className="btn btn--primary" onClick={handleNewGame}>
+                    New Puzzle
+                  </button>
+                  <button className="btn" onClick={handleRestart}>
+                    Replay
+                  </button>
+                  <button className="btn" onClick={goOpenTap}>
+                    Change Difficulty
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -314,6 +347,11 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
           <button className="btn btn--small" onClick={handleRestart}>
             Restart
           </button>
+          {mode === "endless" && (
+            <button className="btn btn--small" onClick={handleNewGame}>
+              New
+            </button>
+          )}
           <button
             type="button"
             className="btn btn--small btn--subtle"
