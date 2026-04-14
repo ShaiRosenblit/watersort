@@ -58,10 +58,17 @@ function parseUndoStack(raw: unknown): UndoSnapshot[] {
   return out;
 }
 
+function configsMatch(a: LevelConfig, b: LevelConfig): boolean {
+  return a.numColors === b.numColors
+    && a.containerCapacity === b.containerCapacity
+    && a.numEmpty === b.numEmpty;
+}
+
 function loadGame(
   mode: GameMode,
   levelIndex: number,
-  openTapTierId: number | null
+  openTapTierId: number | null,
+  customConfig?: LevelConfig | null,
 ): { game: GameState; initialBoard: BoardState; undoStack: UndoSnapshot[]; undosUsed: number } | null {
   try {
     const raw = localStorage.getItem(WATERSORT_STORAGE.game);
@@ -70,6 +77,7 @@ function loadGame(
     if (data.mode !== mode || data.levelIndex !== levelIndex) return null;
     if (mode === "endless" && data.openTapTierId !== openTapTierId) return null;
     if (!data.game?.board || !data.game?.config) return null;
+    if (customConfig && !configsMatch(customConfig, data.game.config)) return null;
     const rawUsed = typeof data.undosUsed === "number" && data.undosUsed >= 0 ? data.undosUsed : 0;
     const budget = undoBudgetForPuzzle(data.mode, data.levelIndex, data.game.config.numColors);
     const initialBoard = Array.isArray(data.initialBoard)
@@ -114,20 +122,20 @@ const POUR_MS = 520;
 
 export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJourney, onOpenTap, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
-    const saved = loadGame(mode, levelIndex, openTapTierId);
+    const saved = loadGame(mode, levelIndex, openTapTierId, customConfig);
     if (saved) return { ...saved.game, selectedContainer: null };
     return buildGameState(mode, levelIndex, openTapTierId, customConfig);
   });
   const [initialBoard, setInitialBoard] = useState<BoardState>(() => {
-    const saved = loadGame(mode, levelIndex, openTapTierId);
+    const saved = loadGame(mode, levelIndex, openTapTierId, customConfig);
     if (saved) return saved.initialBoard;
     return cloneBoard(game.board);
   });
   const [undoStack, setUndoStack] = useState<UndoSnapshot[]>(() => {
-    return loadGame(mode, levelIndex, openTapTierId)?.undoStack ?? [];
+    return loadGame(mode, levelIndex, openTapTierId, customConfig)?.undoStack ?? [];
   });
   const [undosUsed, setUndosUsed] = useState(() => {
-    return loadGame(mode, levelIndex, openTapTierId)?.undosUsed ?? 0;
+    return loadGame(mode, levelIndex, openTapTierId, customConfig)?.undosUsed ?? 0;
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
   const [pourPair, setPourPair] = useState<{ from: number; to: number } | null>(null);
