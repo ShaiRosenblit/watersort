@@ -1,21 +1,21 @@
-import { FREE_POUR_TIERS } from "../game/config";
+import { OPEN_TAP_TIERS } from "../game/config";
 import { tapLight } from "../game/haptics";
 
-interface FreePourPickerProps {
+interface OpenTapPickerProps {
   onSelect: (tierId: number) => void;
-  onCustom: () => void;
+  onCraft: () => void;
   onBack: () => void;
 }
 
-export function FreePourPicker({ onSelect, onCustom, onBack }: FreePourPickerProps) {
+export function OpenTapPicker({ onSelect, onCraft, onBack }: OpenTapPickerProps) {
   function handlePick(id: number) {
     tapLight();
     onSelect(id);
   }
 
-  function handleCustom() {
+  function handleCraft() {
     tapLight();
-    onCustom();
+    onCraft();
   }
 
   function handleBack() {
@@ -29,14 +29,14 @@ export function FreePourPicker({ onSelect, onCustom, onBack }: FreePourPickerPro
         <button className="btn btn--small" onClick={handleBack}>
           ← Play
         </button>
-        <h2 className="picker-title">Free Pour</h2>
+        <h2 className="picker-title">Open Tap</h2>
         <span />
       </header>
 
-      <p className="picker-subtitle">Pick your poison</p>
+      <p className="picker-subtitle">Pick your pour</p>
 
       <div className="picker-list">
-        {FREE_POUR_TIERS.map((tier) => (
+        {OPEN_TAP_TIERS.map((tier) => (
           <button
             key={tier.id}
             className="picker-card"
@@ -50,11 +50,11 @@ export function FreePourPicker({ onSelect, onCustom, onBack }: FreePourPickerPro
             <span className="picker-card__colors">{tier.config.numColors} colors</span>
           </button>
         ))}
-        <button className="picker-card picker-card--custom" onClick={handleCustom}>
+        <button className="picker-card picker-card--custom" onClick={handleCraft}>
           <span className="picker-card__rank picker-card__rank--custom">✦</span>
           <div className="picker-card__text">
-            <span className="picker-card__name">Custom</span>
-            <span className="picker-card__sub">Pick your own parameters</span>
+            <span className="picker-card__name">Craft</span>
+            <span className="picker-card__sub">Mix your own recipe</span>
           </div>
         </button>
       </div>

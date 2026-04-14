@@ -2,7 +2,7 @@ import { useState } from "react";
 import { COLORS } from "../game/config";
 import { tapLight } from "../game/haptics";
 
-interface FreePourCustomProps {
+interface OpenTapCraftProps {
   onPlay: (numColors: number, numBottles: number, shuffleSteps: number) => void;
   onBack: () => void;
 }
@@ -15,7 +15,7 @@ const MIN_SHUFFLES = 20;
 const MAX_SHUFFLES = 300;
 const SHUFFLE_STEP = 10;
 
-export function FreePourCustom({ onPlay, onBack }: FreePourCustomProps) {
+export function OpenTapCraft({ onPlay, onBack }: OpenTapCraftProps) {
   const [numColors, setNumColors] = useState(6);
   const [numBottles, setNumBottles] = useState(8);
   const [shuffleSteps, setShuffleSteps] = useState(80);
@@ -66,11 +66,11 @@ export function FreePourCustom({ onPlay, onBack }: FreePourCustomProps) {
         <button className="btn btn--small" onClick={handleBack}>
           ← Back
         </button>
-        <h2 className="picker-title">Custom</h2>
+        <h2 className="picker-title">Craft</h2>
         <span />
       </header>
 
-      <p className="picker-subtitle">Dial in your challenge</p>
+      <p className="picker-subtitle">Mix your own recipe</p>
 
       <div className="custom-params">
         <div className="custom-param">

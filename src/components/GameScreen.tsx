@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GameMode, GameState, LevelConfig, UndoSnapshot } from "../game/types";
 import { checkWin, cloneBoard, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
-import { configForLevel, FREE_POUR_TIERS, undoBudgetForPuzzle } from "../game/config";
+import { configForLevel, OPEN_TAP_TIERS, undoBudgetForPuzzle } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
 import { WATERSORT_STORAGE } from "../game/storage";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
@@ -11,17 +11,17 @@ import { Board } from "./Board";
 interface GameScreenProps {
   mode: GameMode;
   levelIndex: number;
-  freePourTierId: number | null;
+  openTapTierId: number | null;
   customConfig: LevelConfig | null;
   onJourney: () => void;
-  onFreePour: () => void;
+  onOpenTap: () => void;
   onNextLevel: () => void;
 }
 
 interface SavedGame {
   mode: GameMode;
   levelIndex: number;
-  freePourTierId: number | null;
+  openTapTierId: number | null;
   game: GameState;
   undoStack?: UndoSnapshot[];
   undosUsed?: number;
@@ -30,14 +30,14 @@ interface SavedGame {
 function saveGame(
   mode: GameMode,
   levelIndex: number,
-  freePourTierId: number | null,
+  openTapTierId: number | null,
   game: GameState,
   undoStack: UndoSnapshot[],
   undosUsed: number
 ) {
   localStorage.setItem(
     WATERSORT_STORAGE.game,
-    JSON.stringify({ mode, levelIndex, freePourTierId, game, undoStack, undosUsed })
+    JSON.stringify({ mode, levelIndex, openTapTierId, game, undoStack, undosUsed })
   );
 }
 
@@ -59,14 +59,14 @@ function parseUndoStack(raw: unknown): UndoSnapshot[] {
 function loadGame(
   mode: GameMode,
   levelIndex: number,
-  freePourTierId: number | null
+  openTapTierId: number | null
 ): { game: GameState; undoStack: UndoSnapshot[]; undosUsed: number } | null {
   try {
     const raw = localStorage.getItem(WATERSORT_STORAGE.game);
     if (!raw) return null;
     const data: SavedGame = JSON.parse(raw);
     if (data.mode !== mode || data.levelIndex !== levelIndex) return null;
-    if (mode === "endless" && data.freePourTierId !== freePourTierId) return null;
+    if (mode === "endless" && data.openTapTierId !== openTapTierId) return null;
     if (!data.game?.board || !data.game?.config) return null;
     const rawUsed = typeof data.undosUsed === "number" && data.undosUsed >= 0 ? data.undosUsed : 0;
     const budget = undoBudgetForPuzzle(data.mode, data.levelIndex, data.game.config.numColors);
@@ -87,12 +87,12 @@ function clearSavedGame() {
 function getConfig(mode: GameMode, levelIndex: number, tierId: number | null, customConfig: LevelConfig | null): LevelConfig {
   if (customConfig) return customConfig;
   if (mode === "level") return configForLevel(levelIndex);
-  const tier = FREE_POUR_TIERS.find((t) => t.id === tierId) ?? FREE_POUR_TIERS[2];
+  const tier = OPEN_TAP_TIERS.find((t) => t.id === tierId) ?? OPEN_TAP_TIERS[2];
   return tier.config;
 }
 
-function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: number | null, customConfig: LevelConfig | null): GameState {
-  const config = getConfig(mode, levelIndex, freePourTierId, customConfig);
+function buildGameState(mode: GameMode, levelIndex: number, openTapTierId: number | null, customConfig: LevelConfig | null): GameState {
+  const config = getConfig(mode, levelIndex, openTapTierId, customConfig);
   const level = generateLevel(config, mode === "level" ? levelIndex : undefined);
   return {
     board: level.initial,
@@ -106,17 +106,17 @@ function buildGameState(mode: GameMode, levelIndex: number, freePourTierId: numb
 const SHAKE_MS = 350;
 const POUR_MS = 520;
 
-export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJourney, onFreePour, onNextLevel }: GameScreenProps) {
+export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJourney, onOpenTap, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
-    const saved = loadGame(mode, levelIndex, freePourTierId);
+    const saved = loadGame(mode, levelIndex, openTapTierId);
     if (saved) return { ...saved.game, selectedContainer: null };
-    return buildGameState(mode, levelIndex, freePourTierId, customConfig);
+    return buildGameState(mode, levelIndex, openTapTierId, customConfig);
   });
   const [undoStack, setUndoStack] = useState<UndoSnapshot[]>(() => {
-    return loadGame(mode, levelIndex, freePourTierId)?.undoStack ?? [];
+    return loadGame(mode, levelIndex, openTapTierId)?.undoStack ?? [];
   });
   const [undosUsed, setUndosUsed] = useState(() => {
-    return loadGame(mode, levelIndex, freePourTierId)?.undosUsed ?? 0;
+    return loadGame(mode, levelIndex, openTapTierId)?.undosUsed ?? 0;
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
   const [pourPair, setPourPair] = useState<{ from: number; to: number } | null>(null);
@@ -134,10 +134,10 @@ export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJ
 
   useEffect(() => {
     if (initialized.current) {
-      saveGame(mode, levelIndex, freePourTierId, game, undoStack, undosUsed);
+      saveGame(mode, levelIndex, openTapTierId, game, undoStack, undosUsed);
     }
     initialized.current = true;
-  }, [game, undoStack, undosUsed, levelIndex, freePourTierId, mode]);
+  }, [game, undoStack, undosUsed, levelIndex, openTapTierId, mode]);
 
   function flashAnim(
     setter: (v: number | null) => void,
@@ -207,7 +207,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJ
     tapLight();
     setUndoStack([]);
     setUndosUsed(0);
-    setGame(buildGameState(mode, levelIndex, freePourTierId, customConfig));
+    setGame(buildGameState(mode, levelIndex, openTapTierId, customConfig));
   }
 
   function handleUndo() {
@@ -239,9 +239,9 @@ export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJ
     onNextLevel();
   }
 
-  function goFreePour() {
+  function goOpenTap() {
     tapLight();
-    onFreePour();
+    onOpenTap();
   }
 
   function goJourney() {
@@ -254,12 +254,12 @@ export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJ
     onNextLevel();
   }
 
-  const tier = freePourTierId ? FREE_POUR_TIERS.find((t) => t.id === freePourTierId) : null;
+  const tier = openTapTierId ? OPEN_TAP_TIERS.find((t) => t.id === openTapTierId) : null;
   const title = mode === "level"
     ? `Level ${levelIndex + 1}`
     : customConfig
-      ? "Custom"
-      : tier?.name ?? "Free Pour";
+      ? "Craft"
+      : tier?.name ?? "Open Tap";
 
   return (
     <div className="game-screen">
@@ -295,7 +295,7 @@ export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJ
                 </button>
               )}
               {mode === "endless" && (
-                <button className="btn" onClick={goFreePour}>
+                <button className="btn" onClick={goOpenTap}>
                   Change Difficulty
                 </button>
               )}
@@ -337,8 +337,8 @@ export function GameScreen({ mode, levelIndex, freePourTierId, customConfig, onJ
         </div>
         <div className="game-footer__nav">
           {mode === "level" ? (
-            <button className="btn btn--small btn--subtle" onClick={goFreePour}>
-              Free Pour
+            <button className="btn btn--small btn--subtle" onClick={goOpenTap}>
+              Open Tap
             </button>
           ) : (
             <button className="btn btn--small btn--subtle" onClick={goLevels}>

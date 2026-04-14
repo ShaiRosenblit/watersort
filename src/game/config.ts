@@ -40,7 +40,7 @@ export const TOTAL_LEVELS = 1000;
 
 /**
  * Max undo actions per puzzle. Tighter on harder journey tiers so undo feels earned;
- * Free Pour scales slightly with color count.
+ * Open Tap scales slightly with color count.
  */
 export function undoBudgetForPuzzle(mode: GameMode, levelIndex: number, numColors: number): number {
   if (mode === "endless") {
@@ -105,42 +105,42 @@ export function configForLevel(levelIndex: number): LevelConfig {
   };
 }
 
-export interface FreePourTier {
+export interface OpenTapTier {
   id: number;
   name: string;
   subtitle: string;
   config: LevelConfig;
 }
 
-export const FREE_POUR_TIERS: FreePourTier[] = [
+export const OPEN_TAP_TIERS: OpenTapTier[] = [
   {
     id: 1,
-    name: "Puddle",
-    subtitle: "Barely a challenge",
+    name: "Still",
+    subtitle: "Calm and clear",
     config: { numColors: 3, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 40 },
   },
   {
     id: 2,
-    name: "Juice Box",
-    subtitle: "Nice and easy",
+    name: "Ripple",
+    subtitle: "A gentle stir",
     config: { numColors: 4, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 60 },
   },
   {
     id: 3,
-    name: "Smoothie",
-    subtitle: "A decent blend",
+    name: "Current",
+    subtitle: "Steady momentum",
     config: { numColors: 6, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 80 },
   },
   {
     id: 4,
-    name: "Potion Lab",
-    subtitle: "Things get serious",
+    name: "Rapids",
+    subtitle: "Hold on tight",
     config: { numColors: 8, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 120 },
   },
   {
     id: 5,
-    name: "Chaos Soup",
-    subtitle: "Pure liquid doom",
+    name: "Whirlpool",
+    subtitle: "Pure liquid mayhem",
     config: { numColors: 10, containerCapacity: DEFAULT_CAPACITY, numEmpty: 2, shuffleSteps: 200 },
   },
 ];

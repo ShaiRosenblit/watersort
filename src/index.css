@@ -320,7 +320,7 @@ body {
 }
 
 /* ============================================
-   Free Pour Picker
+   Open Tap Picker
    ============================================ */
 .picker-screen {
   flex: 1;
@@ -438,7 +438,7 @@ body {
 }
 
 /* ============================================
-   Custom Free Pour Picker
+   Open Tap Craft
    ============================================ */
 .custom-params {
   display: flex;
