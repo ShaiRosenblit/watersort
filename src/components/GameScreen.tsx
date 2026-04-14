@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BoardState, GameMode, GameState, LevelConfig, UndoSnapshot } from "../game/types";
 import { checkWin, cloneBoard, executeMove, isValidMove } from "../game/logic";
 import { generateLevel } from "../game/generator";
-import { configForLevel, OPEN_TAP_TIERS, undoBudgetForPuzzle } from "../game/config";
+import { configForLevel, OPEN_TAP_TIERS } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
 import { WATERSORT_STORAGE } from "../game/storage";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
@@ -79,7 +79,6 @@ function loadGame(
     if (!data.game?.board || !data.game?.config) return null;
     if (customConfig && !configsMatch(customConfig, data.game.config)) return null;
     const rawUsed = typeof data.undosUsed === "number" && data.undosUsed >= 0 ? data.undosUsed : 0;
-    const budget = undoBudgetForPuzzle(data.mode, data.levelIndex, data.game.config.numColors);
     const initialBoard = Array.isArray(data.initialBoard)
       ? cloneBoard(data.initialBoard)
       : cloneBoard(data.game.board);
@@ -87,7 +86,7 @@ function loadGame(
       game: data.game,
       initialBoard,
       undoStack: parseUndoStack(data.undoStack),
-      undosUsed: Math.min(rawUsed, budget),
+      undosUsed: rawUsed,
     };
   } catch {
     return null;
@@ -143,13 +142,7 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
   const pourTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialized = useRef(false);
 
-  const undoBudget = useMemo(
-    () => undoBudgetForPuzzle(mode, levelIndex, game.config.numColors),
-    [mode, levelIndex, game.config.numColors]
-  );
-
-  const undosLeft = undoBudget - undosUsed;
-  const canUndo = undoStack.length > 0 && undosLeft > 0 && !game.won;
+  const canUndo = undoStack.length > 0 && !game.won;
 
   useEffect(() => {
     if (initialized.current) {
@@ -363,18 +356,16 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
             title={
               game.won
                 ? "Undo is disabled after a win"
-                : undosLeft <= 0
-                  ? "No undo credits left"
-                  : "Take back your last pour"
+                : "Take back your last pour"
             }
           >
             Undo
           </button>
-          <span className="game-footer__undo-meta" aria-live="polite">
-            {undosUsed > 0 ? `${undosUsed} undo${undosUsed === 1 ? "" : "s"} used` : "No undos yet"}
-            <span className="game-footer__undo-meta-sep"> · </span>
-            {undosLeft > 0 ? `${undosLeft} left` : "0 left"}
-          </span>
+          {undosUsed > 0 && (
+            <span className="game-footer__undo-meta" aria-live="polite">
+              {undosUsed} undo{undosUsed === 1 ? "" : "s"} used
+            </span>
+          )}
         </div>
         <div className="game-footer__nav">
           <button className="btn btn--small btn--subtle" onClick={goJourney}>

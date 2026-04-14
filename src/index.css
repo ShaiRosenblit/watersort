@@ -578,9 +578,6 @@ body {
   max-width: 11rem;
 }
 
-.game-footer__undo-meta-sep {
-  opacity: 0.65;
-}
 
 .game-footer__nav {
   display: flex;
