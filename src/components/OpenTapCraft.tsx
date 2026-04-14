@@ -11,7 +11,7 @@ const MIN_COLORS = 2;
 const MAX_COLORS = COLORS.length;
 const MIN_EMPTY = 1;
 const MAX_EMPTY = 10;
-const MIN_SHUFFLES = 20;
+const MIN_SHUFFLES = 1;
 const MAX_SHUFFLES = 300;
 const SHUFFLE_STEP = 10;
 
@@ -43,9 +43,12 @@ export function OpenTapCraft({ onPlay, onBack }: OpenTapCraftProps) {
 
   function handleShufflesChange(delta: number) {
     tapLight();
-    setShuffleSteps((prev) =>
-      Math.max(MIN_SHUFFLES, Math.min(MAX_SHUFFLES, prev + delta * SHUFFLE_STEP))
-    );
+    setShuffleSteps((prev) => {
+      const step = prev < SHUFFLE_STEP && delta < 0 || prev <= SHUFFLE_STEP && delta > 0
+        ? 1
+        : SHUFFLE_STEP;
+      return Math.max(MIN_SHUFFLES, Math.min(MAX_SHUFFLES, prev + delta * step));
+    });
   }
 
   function handlePlay() {
