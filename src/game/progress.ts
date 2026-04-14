@@ -15,3 +15,17 @@ export function markLevelCompleted(levelIndex: number) {
     localStorage.setItem(WATERSORT_STORAGE.completedLevel, String(levelIndex));
   }
 }
+
+export function isGodMode(): boolean {
+  return localStorage.getItem(WATERSORT_STORAGE.godMode) === "1";
+}
+
+export function toggleGodMode(): boolean {
+  const next = !isGodMode();
+  if (next) {
+    localStorage.setItem(WATERSORT_STORAGE.godMode, "1");
+  } else {
+    localStorage.removeItem(WATERSORT_STORAGE.godMode);
+  }
+  return next;
+}
