@@ -79,12 +79,14 @@ export default function App() {
       <LevelJourney
         onSelectLevel={(idx) => navigate({ kind: "level", levelIndex: idx })}
         onBack={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
+        onOpenTap={() => navigate({ kind: "opentap-pick" })}
       />
     ) : screen.kind === "opentap-pick" ? (
       <OpenTapPicker
         onSelect={(tierId) => navigate({ kind: "opentap", tierId })}
         onCraft={() => navigate({ kind: "opentap-craft" })}
         onBack={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
+        onJourney={() => navigate({ kind: "journey" })}
       />
     ) : screen.kind === "opentap-craft" ? (
       <OpenTapCraft

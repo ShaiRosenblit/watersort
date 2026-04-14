@@ -5,9 +5,10 @@ interface OpenTapPickerProps {
   onSelect: (tierId: number) => void;
   onCraft: () => void;
   onBack: () => void;
+  onJourney: () => void;
 }
 
-export function OpenTapPicker({ onSelect, onCraft, onBack }: OpenTapPickerProps) {
+export function OpenTapPicker({ onSelect, onCraft, onBack, onJourney }: OpenTapPickerProps) {
   function handlePick(id: number) {
     tapLight();
     onSelect(id);
@@ -23,6 +24,11 @@ export function OpenTapPicker({ onSelect, onCraft, onBack }: OpenTapPickerProps)
     onBack();
   }
 
+  function handleJourney() {
+    tapLight();
+    onJourney();
+  }
+
   return (
     <div className="picker-screen">
       <header className="picker-header">
@@ -30,7 +36,9 @@ export function OpenTapPicker({ onSelect, onCraft, onBack }: OpenTapPickerProps)
           ← Play
         </button>
         <h2 className="picker-title">Open Tap</h2>
-        <span />
+        <button className="btn btn--small" onClick={handleJourney}>
+          ← Journey
+        </button>
       </header>
 
       <p className="picker-subtitle">Pick your pour</p>

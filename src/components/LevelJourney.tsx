@@ -9,9 +9,10 @@ const WINDOW_AFTER = 4;
 interface LevelJourneyProps {
   onSelectLevel: (levelIndex: number) => void;
   onBack: () => void;
+  onOpenTap: () => void;
 }
 
-export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
+export function LevelJourney({ onSelectLevel, onBack, onOpenTap }: LevelJourneyProps) {
   const highestCompleted = getHighestCompleted();
   const currentLevel = Math.min(highestCompleted + 1, TOTAL_LEVELS - 1);
   const currentRef = useRef<HTMLButtonElement>(null);
@@ -35,6 +36,11 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
     onBack();
   }
 
+  function handleOpenTap() {
+    tapLight();
+    onOpenTap();
+  }
+
   const pct = Math.round(((highestCompleted + 1) / TOTAL_LEVELS) * 100);
 
   return (
@@ -44,7 +50,9 @@ export function LevelJourney({ onSelectLevel, onBack }: LevelJourneyProps) {
           ← Play
         </button>
         <h2 className="journey-title">Journey</h2>
-        <span className="journey-progress">Level {currentLevel + 1}</span>
+        <button className="btn btn--small" onClick={handleOpenTap}>
+          Open Tap →
+        </button>
       </header>
 
       <div className="journey-stats">

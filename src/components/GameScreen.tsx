@@ -279,11 +279,6 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
     onJourney();
   }
 
-  function goLevels() {
-    tapLight();
-    onNextLevel();
-  }
-
   const tier = openTapTierId ? OPEN_TAP_TIERS.find((t) => t.id === openTapTierId) : null;
   const title = mode === "level"
     ? `Level ${levelIndex + 1}`
@@ -374,17 +369,11 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
           </span>
         </div>
         <div className="game-footer__nav">
-          {mode === "level" ? (
-            <button className="btn btn--small btn--subtle" onClick={goOpenTap}>
-              Open Tap
-            </button>
-          ) : (
-            <button className="btn btn--small btn--subtle" onClick={goLevels}>
-              Levels
-            </button>
-          )}
           <button className="btn btn--small btn--subtle" onClick={goJourney}>
             Journey
+          </button>
+          <button className="btn btn--small btn--subtle" onClick={goOpenTap}>
+            Open Tap
           </button>
         </div>
       </div>
