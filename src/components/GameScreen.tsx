@@ -6,6 +6,7 @@ import { configForLevel, OPEN_TAP_TIERS } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
 import { WATERSORT_STORAGE } from "../game/storage";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
+import { buildShareUrl } from "../game/sharing";
 import { Board } from "./Board";
 
 interface GameScreenProps {
@@ -13,6 +14,8 @@ interface GameScreenProps {
   levelIndex: number;
   openTapTierId: number | null;
   customConfig: LevelConfig | null;
+  sharedBoard?: BoardState;
+  sharedId?: string;
   onJourney: () => void;
   onOpenTap: () => void;
   onNextLevel: () => void;
@@ -22,6 +25,7 @@ interface SavedGame {
   mode: GameMode;
   levelIndex: number;
   openTapTierId: number | null;
+  sharedId?: string;
   game: GameState;
   initialBoard?: BoardState;
   undoStack?: UndoSnapshot[];
@@ -35,11 +39,12 @@ function saveGame(
   game: GameState,
   initialBoard: BoardState,
   undoStack: UndoSnapshot[],
-  undosUsed: number
+  undosUsed: number,
+  sharedId?: string,
 ) {
   localStorage.setItem(
     WATERSORT_STORAGE.game,
-    JSON.stringify({ mode, levelIndex, openTapTierId, game, initialBoard, undoStack, undosUsed })
+    JSON.stringify({ mode, levelIndex, openTapTierId, sharedId, game, initialBoard, undoStack, undosUsed })
   );
 }
 
@@ -69,6 +74,7 @@ function loadGame(
   levelIndex: number,
   openTapTierId: number | null,
   customConfig?: LevelConfig | null,
+  sharedId?: string,
 ): { game: GameState; initialBoard: BoardState; undoStack: UndoSnapshot[]; undosUsed: number } | null {
   try {
     const raw = localStorage.getItem(WATERSORT_STORAGE.game);
@@ -76,6 +82,8 @@ function loadGame(
     const data: SavedGame = JSON.parse(raw);
     if (data.mode !== mode || data.levelIndex !== levelIndex) return null;
     if (mode === "endless" && data.openTapTierId !== openTapTierId) return null;
+    const savedSharedId = typeof data.sharedId === "string" ? data.sharedId : undefined;
+    if (sharedId !== savedSharedId) return null;
     if (!data.game?.board || !data.game?.config) return null;
     if (customConfig && !configsMatch(customConfig, data.game.config)) return null;
     const rawUsed = typeof data.undosUsed === "number" && data.undosUsed >= 0 ? data.undosUsed : 0;
@@ -119,37 +127,43 @@ function buildGameState(mode: GameMode, levelIndex: number, openTapTierId: numbe
 const SHAKE_MS = 350;
 const POUR_MS = 520;
 
-export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJourney, onOpenTap, onNextLevel }: GameScreenProps) {
+export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, sharedBoard, sharedId, onJourney, onOpenTap, onNextLevel }: GameScreenProps) {
   const [game, setGame] = useState<GameState>(() => {
-    const saved = loadGame(mode, levelIndex, openTapTierId, customConfig);
+    const saved = loadGame(mode, levelIndex, openTapTierId, customConfig, sharedId);
     if (saved) return { ...saved.game, selectedContainer: null };
+    if (sharedBoard && customConfig) {
+      return { board: cloneBoard(sharedBoard), selectedContainer: null, moveCount: 0, won: false, config: customConfig };
+    }
     return buildGameState(mode, levelIndex, openTapTierId, customConfig);
   });
   const [initialBoard, setInitialBoard] = useState<BoardState>(() => {
-    const saved = loadGame(mode, levelIndex, openTapTierId, customConfig);
+    const saved = loadGame(mode, levelIndex, openTapTierId, customConfig, sharedId);
     if (saved) return saved.initialBoard;
+    if (sharedBoard) return cloneBoard(sharedBoard);
     return cloneBoard(game.board);
   });
   const [undoStack, setUndoStack] = useState<UndoSnapshot[]>(() => {
-    return loadGame(mode, levelIndex, openTapTierId, customConfig)?.undoStack ?? [];
+    return loadGame(mode, levelIndex, openTapTierId, customConfig, sharedId)?.undoStack ?? [];
   });
   const [undosUsed, setUndosUsed] = useState(() => {
-    return loadGame(mode, levelIndex, openTapTierId, customConfig)?.undosUsed ?? 0;
+    return loadGame(mode, levelIndex, openTapTierId, customConfig, sharedId)?.undosUsed ?? 0;
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
   const [pourPair, setPourPair] = useState<{ from: number; to: number } | null>(null);
+  const [shareToast, setShareToast] = useState(false);
   const shakeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const pourTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const shareToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialized = useRef(false);
 
   const canUndo = undoStack.length > 0 && !game.won;
 
   useEffect(() => {
     if (initialized.current) {
-      saveGame(mode, levelIndex, openTapTierId, game, initialBoard, undoStack, undosUsed);
+      saveGame(mode, levelIndex, openTapTierId, game, initialBoard, undoStack, undosUsed, sharedId);
     }
     initialized.current = true;
-  }, [game, initialBoard, undoStack, undosUsed, levelIndex, openTapTierId, mode]);
+  }, [game, initialBoard, undoStack, undosUsed, levelIndex, openTapTierId, mode, sharedId]);
 
   function flashAnim(
     setter: (v: number | null) => void,
@@ -280,12 +294,34 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
     onJourney();
   }
 
+  async function handleShare() {
+    tapLight();
+    const url = buildShareUrl(initialBoard, game.config.containerCapacity);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Water Sort Puzzle", url });
+        return;
+      } catch { /* user cancelled or share failed — fall through to clipboard */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      window.prompt("Copy this link:", url);
+      return;
+    }
+    setShareToast(true);
+    clearTimeout(shareToastTimer.current);
+    shareToastTimer.current = setTimeout(() => setShareToast(false), 2000);
+  }
+
   const tier = openTapTierId ? OPEN_TAP_TIERS.find((t) => t.id === openTapTierId) : null;
   const title = mode === "level"
     ? `Level ${levelIndex + 1}`
-    : customConfig
-      ? "Craft"
-      : tier?.name ?? "Open Tap";
+    : sharedId
+      ? "Challenge"
+      : customConfig
+        ? "Craft"
+        : tier?.name ?? "Open Tap";
 
   return (
     <div className="game-screen">
@@ -361,6 +397,14 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
           >
             Undo
           </button>
+          <button
+            type="button"
+            className="btn btn--small btn--subtle"
+            onClick={handleShare}
+            title="Share this puzzle"
+          >
+            Share
+          </button>
           {undosUsed > 0 && (
             <span className="game-footer__undo-meta" aria-live="polite">
               {undosUsed} undo{undosUsed === 1 ? "" : "s"} used
@@ -376,6 +420,10 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, onJo
           </button>
         </div>
       </div>
+
+      {shareToast && (
+        <div className="share-toast" aria-live="polite">Link copied!</div>
+      )}
     </div>
   );
 }

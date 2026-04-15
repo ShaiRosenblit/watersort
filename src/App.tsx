@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GameScreen } from "./components/GameScreen";
 import { LevelJourney } from "./components/LevelJourney";
 import { OpenTapPicker } from "./components/OpenTapPicker";
@@ -7,6 +7,7 @@ import { getHighestCompleted } from "./game/progress";
 import { tapMedium } from "./game/haptics";
 import { clearAllLocalProgress, WATERSORT_STORAGE } from "./game/storage";
 import { DEFAULT_CAPACITY } from "./game/config";
+import { parseShareHash, decodeBoard } from "./game/sharing";
 import type { LevelConfig } from "./game/types";
 
 type Screen =
@@ -15,13 +16,19 @@ type Screen =
   | { kind: "opentap-pick" }
   | { kind: "opentap"; tierId: number }
   | { kind: "opentap-craft" }
-  | { kind: "opentap-craft-play"; numColors: number; numBottles: number; shuffleSteps: number };
+  | { kind: "opentap-craft-play"; numColors: number; numBottles: number; shuffleSteps: number }
+  | { kind: "shared"; encoded: string };
 
 function currentLevelIndex(): number {
   return getHighestCompleted() + 1;
 }
 
 function loadScreen(): Screen {
+  const sharePayload = parseShareHash();
+  if (sharePayload && decodeBoard(sharePayload)) {
+    return { kind: "shared", encoded: sharePayload };
+  }
+
   try {
     const raw = localStorage.getItem(WATERSORT_STORAGE.screen);
     if (raw) {
@@ -35,6 +42,7 @@ function loadScreen(): Screen {
         typeof s.numBottles === "number" &&
         typeof s.shuffleSteps === "number"
       ) return s;
+      if (s.kind === "shared" && typeof s.encoded === "string") return s;
     }
   } catch { /* ignore */ }
   return { kind: "level", levelIndex: currentLevelIndex() };
@@ -46,6 +54,12 @@ function saveScreen(screen: Screen) {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>(loadScreen);
+
+  useEffect(() => {
+    if (window.location.hash.startsWith("#s=")) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   function navigate(s: Screen) {
     saveScreen(s);
@@ -73,6 +87,8 @@ export default function App() {
       shuffleSteps: s.shuffleSteps,
     };
   }
+
+  const sharedPuzzle = screen.kind === "shared" ? decodeBoard(screen.encoded) : null;
 
   const main =
     screen.kind === "journey" ? (
@@ -106,6 +122,19 @@ export default function App() {
         onOpenTap={() => navigate({ kind: "opentap-pick" })}
         onNextLevel={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
       />
+    ) : screen.kind === "shared" && sharedPuzzle ? (
+      <GameScreen
+        key={`shared-${screen.encoded}`}
+        mode="endless"
+        levelIndex={0}
+        openTapTierId={null}
+        customConfig={sharedPuzzle.config}
+        sharedBoard={sharedPuzzle.board}
+        sharedId={screen.encoded}
+        onJourney={() => navigate({ kind: "journey" })}
+        onOpenTap={() => navigate({ kind: "opentap-pick" })}
+        onNextLevel={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
+      />
     ) : screen.kind === "level" ? (
       <GameScreen
         key={`level-${screen.levelIndex}`}
@@ -119,10 +148,10 @@ export default function App() {
       />
     ) : (
       <GameScreen
-        key={`opentap-${screen.tierId}`}
+        key={`opentap-${(screen as { tierId: number }).tierId}`}
         mode="endless"
         levelIndex={0}
-        openTapTierId={screen.tierId}
+        openTapTierId={(screen as { tierId: number }).tierId}
         customConfig={null}
         onJourney={() => navigate({ kind: "journey" })}
         onOpenTap={() => navigate({ kind: "opentap-pick" })}
