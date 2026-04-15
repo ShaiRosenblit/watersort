@@ -78,8 +78,6 @@ export function decodeBoard(encoded: string): DecodedPuzzle | null {
   }
 }
 
-const SHARE_SESSION_KEY = "watersort:share";
-
 export function buildShareUrl(board: BoardState, capacity: number): string {
   const encoded = encodeBoard(board, capacity);
   return window.location.origin + import.meta.env.BASE_URL + encoded;
@@ -87,14 +85,18 @@ export function buildShareUrl(board: BoardState, capacity: number): string {
 
 /**
  * Check for a shared puzzle payload. Sources (in priority order):
- * 1. sessionStorage — set by the GitHub Pages 404.html redirect
- * 2. URL hash #s=… — backward compatibility with old-format links
+ * 1. Path segment after base URL — e.g. /watersort/ENCODED
+ *    (works because 404.html is a copy of index.html, so the SPA loads on any path)
+ * 2. URL hash #s=… — backward compatibility
  */
 export function parseSharePayload(): string | null {
-  const stored = sessionStorage.getItem(SHARE_SESSION_KEY);
-  if (stored) {
-    sessionStorage.removeItem(SHARE_SESSION_KEY);
-    return stored;
+  const base = import.meta.env.BASE_URL;
+  const path = window.location.pathname;
+  if (path.startsWith(base)) {
+    const segment = path.slice(base.length);
+    if (segment && segment !== "index.html") {
+      return segment;
+    }
   }
   const hash = window.location.hash;
   if (hash.startsWith("#s=")) return hash.slice(3);

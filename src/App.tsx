@@ -56,13 +56,11 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>(loadScreen);
 
   useEffect(() => {
-    if (screen.kind === "shared") {
-      const cleanUrl = import.meta.env.BASE_URL + screen.encoded;
-      if (window.location.pathname !== cleanUrl) {
-        history.replaceState(null, "", cleanUrl);
-      }
-    } else if (window.location.hash.startsWith("#s=")) {
-      history.replaceState(null, "", window.location.pathname + window.location.search);
+    const expectedPath = screen.kind === "shared"
+      ? import.meta.env.BASE_URL + screen.encoded
+      : import.meta.env.BASE_URL;
+    if (window.location.pathname !== expectedPath || window.location.hash) {
+      history.replaceState(null, "", expectedPath);
     }
   }, [screen]);
 
