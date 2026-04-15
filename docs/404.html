@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script>
+      // GitHub Pages SPA redirect: captures the path segment after the base
+      // and passes it to the app via sessionStorage so the main page can load
+      // the shared puzzle without a query string or hash visible to the user.
+      var base = '/watersort/';
+      var segment = location.pathname.slice(base.length);
+      if (segment) {
+        sessionStorage.setItem('watersort:share', segment);
+      }
+      location.replace(base);
+    </script>
+  </head>
+  <body></body>
+</html>

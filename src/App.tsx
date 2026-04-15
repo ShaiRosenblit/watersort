@@ -7,7 +7,7 @@ import { getHighestCompleted } from "./game/progress";
 import { tapMedium } from "./game/haptics";
 import { clearAllLocalProgress, WATERSORT_STORAGE } from "./game/storage";
 import { DEFAULT_CAPACITY } from "./game/config";
-import { parseShareHash, decodeBoard } from "./game/sharing";
+import { parseSharePayload, decodeBoard } from "./game/sharing";
 import type { LevelConfig } from "./game/types";
 
 type Screen =
@@ -24,7 +24,7 @@ function currentLevelIndex(): number {
 }
 
 function loadScreen(): Screen {
-  const sharePayload = parseShareHash();
+  const sharePayload = parseSharePayload();
   if (sharePayload && decodeBoard(sharePayload)) {
     return { kind: "shared", encoded: sharePayload };
   }
@@ -56,14 +56,22 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>(loadScreen);
 
   useEffect(() => {
-    if (window.location.hash.startsWith("#s=")) {
+    if (screen.kind === "shared") {
+      const cleanUrl = import.meta.env.BASE_URL + screen.encoded;
+      if (window.location.pathname !== cleanUrl) {
+        history.replaceState(null, "", cleanUrl);
+      }
+    } else if (window.location.hash.startsWith("#s=")) {
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
-  }, []);
+  }, [screen]);
 
   function navigate(s: Screen) {
     saveScreen(s);
     setScreen(s);
+    if (s.kind !== "shared") {
+      history.replaceState(null, "", import.meta.env.BASE_URL);
+    }
   }
 
   function handleClearLocalData() {

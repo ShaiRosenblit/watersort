@@ -78,14 +78,25 @@ export function decodeBoard(encoded: string): DecodedPuzzle | null {
   }
 }
 
+const SHARE_SESSION_KEY = "watersort:share";
+
 export function buildShareUrl(board: BoardState, capacity: number): string {
   const encoded = encodeBoard(board, capacity);
-  const base = window.location.href.split("#")[0];
-  return `${base}#s=${encoded}`;
+  return window.location.origin + import.meta.env.BASE_URL + encoded;
 }
 
-export function parseShareHash(): string | null {
+/**
+ * Check for a shared puzzle payload. Sources (in priority order):
+ * 1. sessionStorage — set by the GitHub Pages 404.html redirect
+ * 2. URL hash #s=… — backward compatibility with old-format links
+ */
+export function parseSharePayload(): string | null {
+  const stored = sessionStorage.getItem(SHARE_SESSION_KEY);
+  if (stored) {
+    sessionStorage.removeItem(SHARE_SESSION_KEY);
+    return stored;
+  }
   const hash = window.location.hash;
-  if (!hash.startsWith("#s=")) return null;
-  return hash.slice(3);
+  if (hash.startsWith("#s=")) return hash.slice(3);
+  return null;
 }
