@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GameScreen } from "./components/GameScreen";
 import { LevelJourney } from "./components/LevelJourney";
 import { OpenTapPicker } from "./components/OpenTapPicker";
 import { OpenTapCraft } from "./components/OpenTapCraft";
-import { PlayCode } from "./components/PlayCode";
 import { getHighestCompleted } from "./game/progress";
 import { tapMedium } from "./game/haptics";
 import { clearAllLocalProgress, WATERSORT_STORAGE } from "./game/storage";
 import { DEFAULT_CAPACITY } from "./game/config";
-import { decodeBoard } from "./game/sharing";
+import { parseSharePayload, decodeBoard } from "./game/sharing";
 import type { LevelConfig } from "./game/types";
 
 type Screen =
@@ -18,19 +17,23 @@ type Screen =
   | { kind: "opentap"; tierId: number }
   | { kind: "opentap-craft" }
   | { kind: "opentap-craft-play"; numColors: number; numBottles: number; shuffleSteps: number }
-  | { kind: "play-code" }
-  | { kind: "play-code-game"; encoded: string };
+  | { kind: "shared"; encoded: string };
 
 function currentLevelIndex(): number {
   return getHighestCompleted() + 1;
 }
 
 function loadScreen(): Screen {
+  const sharePayload = parseSharePayload();
+  if (sharePayload && decodeBoard(sharePayload)) {
+    return { kind: "shared", encoded: sharePayload };
+  }
+
   try {
     const raw = localStorage.getItem(WATERSORT_STORAGE.screen);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s.kind === "journey" || s.kind === "opentap-pick" || s.kind === "opentap-craft" || s.kind === "play-code") return s;
+      if (s.kind === "journey" || s.kind === "opentap-pick" || s.kind === "opentap-craft") return s;
       if (s.kind === "level" && typeof s.levelIndex === "number") return s;
       if (s.kind === "opentap" && typeof s.tierId === "number") return s;
       if (
@@ -39,7 +42,7 @@ function loadScreen(): Screen {
         typeof s.numBottles === "number" &&
         typeof s.shuffleSteps === "number"
       ) return s;
-      if (s.kind === "play-code-game" && typeof s.encoded === "string") return s;
+      if (s.kind === "shared" && typeof s.encoded === "string") return s;
     }
   } catch { /* ignore */ }
   return { kind: "level", levelIndex: currentLevelIndex() };
@@ -52,9 +55,21 @@ function saveScreen(screen: Screen) {
 export default function App() {
   const [screen, setScreen] = useState<Screen>(loadScreen);
 
+  useEffect(() => {
+    const expectedPath = screen.kind === "shared"
+      ? import.meta.env.BASE_URL + screen.encoded
+      : import.meta.env.BASE_URL;
+    if (window.location.pathname !== expectedPath || window.location.hash) {
+      history.replaceState(null, "", expectedPath);
+    }
+  }, [screen]);
+
   function navigate(s: Screen) {
     saveScreen(s);
     setScreen(s);
+    if (s.kind !== "shared") {
+      history.replaceState(null, "", import.meta.env.BASE_URL);
+    }
   }
 
   function handleClearLocalData() {
@@ -79,7 +94,7 @@ export default function App() {
     };
   }
 
-  const codePuzzle = screen.kind === "play-code-game" ? decodeBoard(screen.encoded) : null;
+  const sharedPuzzle = screen.kind === "shared" ? decodeBoard(screen.encoded) : null;
 
   const main =
     screen.kind === "journey" ? (
@@ -92,7 +107,6 @@ export default function App() {
       <OpenTapPicker
         onSelect={(tierId) => navigate({ kind: "opentap", tierId })}
         onCraft={() => navigate({ kind: "opentap-craft" })}
-        onPlayCode={() => navigate({ kind: "play-code" })}
         onBack={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
         onJourney={() => navigate({ kind: "journey" })}
       />
@@ -114,19 +128,14 @@ export default function App() {
         onOpenTap={() => navigate({ kind: "opentap-pick" })}
         onNextLevel={() => navigate({ kind: "level", levelIndex: currentLevelIndex() })}
       />
-    ) : screen.kind === "play-code" ? (
-      <PlayCode
-        onPlay={(encoded) => navigate({ kind: "play-code-game", encoded })}
-        onBack={() => navigate({ kind: "opentap-pick" })}
-      />
-    ) : screen.kind === "play-code-game" && codePuzzle ? (
+    ) : screen.kind === "shared" && sharedPuzzle ? (
       <GameScreen
-        key={`code-${screen.encoded}`}
+        key={`shared-${screen.encoded}`}
         mode="endless"
         levelIndex={0}
         openTapTierId={null}
-        customConfig={codePuzzle.config}
-        sharedBoard={codePuzzle.board}
+        customConfig={sharedPuzzle.config}
+        sharedBoard={sharedPuzzle.board}
         sharedId={screen.encoded}
         onJourney={() => navigate({ kind: "journey" })}
         onOpenTap={() => navigate({ kind: "opentap-pick" })}

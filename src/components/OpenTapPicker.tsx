@@ -4,12 +4,11 @@ import { tapLight } from "../game/haptics";
 interface OpenTapPickerProps {
   onSelect: (tierId: number) => void;
   onCraft: () => void;
-  onPlayCode: () => void;
   onBack: () => void;
   onJourney: () => void;
 }
 
-export function OpenTapPicker({ onSelect, onCraft, onPlayCode, onBack, onJourney }: OpenTapPickerProps) {
+export function OpenTapPicker({ onSelect, onCraft, onBack, onJourney }: OpenTapPickerProps) {
   function handlePick(id: number) {
     tapLight();
     onSelect(id);
@@ -18,11 +17,6 @@ export function OpenTapPicker({ onSelect, onCraft, onPlayCode, onBack, onJourney
   function handleCraft() {
     tapLight();
     onCraft();
-  }
-
-  function handlePlayCode() {
-    tapLight();
-    onPlayCode();
   }
 
   function handleBack() {
@@ -69,13 +63,6 @@ export function OpenTapPicker({ onSelect, onCraft, onPlayCode, onBack, onJourney
           <div className="picker-card__text">
             <span className="picker-card__name">Craft</span>
             <span className="picker-card__sub">Mix your own recipe</span>
-          </div>
-        </button>
-        <button className="picker-card picker-card--custom" onClick={handlePlayCode}>
-          <span className="picker-card__rank picker-card__rank--custom">↓</span>
-          <div className="picker-card__text">
-            <span className="picker-card__name">Play Code</span>
-            <span className="picker-card__sub">Paste a puzzle from a friend</span>
           </div>
         </button>
       </div>
