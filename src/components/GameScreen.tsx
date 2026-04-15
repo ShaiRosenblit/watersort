@@ -6,7 +6,7 @@ import { configForLevel, OPEN_TAP_TIERS } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
 import { WATERSORT_STORAGE } from "../game/storage";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
-import { buildShareUrl } from "../game/sharing";
+import { buildShareUrl, buildWinMessage } from "../game/sharing";
 import { Board } from "./Board";
 
 interface GameScreenProps {
@@ -314,6 +314,27 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, shar
     shareToastTimer.current = setTimeout(() => setShareToast(false), 2000);
   }
 
+  async function handleShareWin() {
+    tapLight();
+    const url = buildShareUrl(initialBoard, game.config.containerCapacity);
+    const message = buildWinMessage(url, game.moveCount);
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: message });
+        return;
+      } catch { /* user cancelled or share failed — fall through to clipboard */ }
+    }
+    try {
+      await navigator.clipboard.writeText(message);
+    } catch {
+      window.prompt("Copy this message:", message);
+      return;
+    }
+    setShareToast(true);
+    clearTimeout(shareToastTimer.current);
+    shareToastTimer.current = setTimeout(() => setShareToast(false), 2000);
+  }
+
   const tier = openTapTierId ? OPEN_TAP_TIERS.find((t) => t.id === openTapTierId) : null;
   const title = mode === "level"
     ? `Level ${levelIndex + 1}`
@@ -352,6 +373,9 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, shar
                   <button className="btn btn--primary" onClick={handleContinue}>
                     Next Level →
                   </button>
+                  <button className="btn" onClick={handleShareWin}>
+                    Challenge a Friend
+                  </button>
                   <button className="btn" onClick={handleRestart}>
                     Replay
                   </button>
@@ -360,6 +384,9 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, shar
                 <>
                   <button className="btn btn--primary" onClick={handleNewGame}>
                     New Puzzle
+                  </button>
+                  <button className="btn" onClick={handleShareWin}>
+                    Challenge a Friend
                   </button>
                   <button className="btn" onClick={handleRestart}>
                     Replay

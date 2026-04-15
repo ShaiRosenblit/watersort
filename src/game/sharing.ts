@@ -89,6 +89,10 @@ export function buildShareUrl(board: BoardState, capacity: number): string {
  *    (works because 404.html is a copy of index.html, so the SPA loads on any path)
  * 2. URL hash #s=… — backward compatibility
  */
+export function buildWinMessage(url: string, moves: number): string {
+  return `I solved this Water Sort puzzle in ${moves} move${moves === 1 ? "" : "s"}! Can you beat me?\n\n${url}`;
+}
+
 export function parseSharePayload(): string | null {
   const base = import.meta.env.BASE_URL;
   const path = window.location.pathname;
