@@ -2,6 +2,7 @@ import type { BoardState, LevelConfig } from "./types";
 import { COLORS } from "./config";
 
 const SHARE_VERSION = 1;
+const SITE_URL = "https://shairosenblit.github.io/watersort/";
 
 function colorToIndex(color: string): number {
   const idx = COLORS.indexOf(color);
@@ -78,27 +79,15 @@ export function decodeBoard(encoded: string): DecodedPuzzle | null {
   }
 }
 
-export function buildShareUrl(board: BoardState, capacity: number): string {
-  const encoded = encodeBoard(board, capacity);
-  return window.location.origin + import.meta.env.BASE_URL + encoded;
-}
-
-/**
- * Check for a shared puzzle payload. Sources (in priority order):
- * 1. Path segment after base URL — e.g. /watersort/ENCODED
- *    (works because 404.html is a copy of index.html, so the SPA loads on any path)
- * 2. URL hash #s=… — backward compatibility
- */
-export function parseSharePayload(): string | null {
-  const base = import.meta.env.BASE_URL;
-  const path = window.location.pathname;
-  if (path.startsWith(base)) {
-    const segment = path.slice(base.length);
-    if (segment && segment !== "index.html") {
-      return segment;
-    }
-  }
-  const hash = window.location.hash;
-  if (hash.startsWith("#s=")) return hash.slice(3);
-  return null;
+export function buildShareMessage(code: string): string {
+  return [
+    "Water Sort Challenge!",
+    "",
+    "Can you solve this puzzle?",
+    "",
+    `Code: ${code}`,
+    "",
+    `Play at: ${SITE_URL}`,
+    "Open Tap \u2192 Play Code \u2192 paste the code",
+  ].join("\n");
 }

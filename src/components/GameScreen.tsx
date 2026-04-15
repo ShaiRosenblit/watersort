@@ -6,7 +6,7 @@ import { configForLevel, OPEN_TAP_TIERS } from "../game/config";
 import { markLevelCompleted } from "../game/progress";
 import { WATERSORT_STORAGE } from "../game/storage";
 import { tapLight, tapMedium, tapError, tapCelebration } from "../game/haptics";
-import { buildShareUrl } from "../game/sharing";
+import { encodeBoard, buildShareMessage } from "../game/sharing";
 import { Board } from "./Board";
 
 interface GameScreenProps {
@@ -150,7 +150,8 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, shar
   });
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
   const [pourPair, setPourPair] = useState<{ from: number; to: number } | null>(null);
-  const [shareToast, setShareToast] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareToast, setShareToast] = useState<string | false>(false);
   const shakeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const pourTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const shareToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -294,24 +295,50 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, shar
     onJourney();
   }
 
-  async function handleShare() {
+  const shareCode = encodeBoard(initialBoard, game.config.containerCapacity);
+
+  function handleShareOpen() {
     tapLight();
-    const url = buildShareUrl(initialBoard, game.config.containerCapacity);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Water Sort Puzzle", url });
-        return;
-      } catch { /* user cancelled or share failed — fall through to clipboard */ }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      window.prompt("Copy this link:", url);
-      return;
-    }
-    setShareToast(true);
+    setShareOpen(true);
+  }
+
+  function handleShareClose() {
+    tapLight();
+    setShareOpen(false);
+  }
+
+  function flashToast(msg: string) {
+    setShareToast(msg);
     clearTimeout(shareToastTimer.current);
     shareToastTimer.current = setTimeout(() => setShareToast(false), 2000);
+  }
+
+  async function handleCopyCode() {
+    tapLight();
+    try {
+      await navigator.clipboard.writeText(shareCode);
+      flashToast("Code copied!");
+    } catch {
+      window.prompt("Copy this code:", shareCode);
+    }
+  }
+
+  async function handleShareMessage() {
+    tapLight();
+    const message = buildShareMessage(shareCode);
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: message });
+        setShareOpen(false);
+        return;
+      } catch { /* user cancelled — fall through to clipboard */ }
+    }
+    try {
+      await navigator.clipboard.writeText(message);
+      flashToast("Message copied!");
+    } catch {
+      window.prompt("Copy this message:", message);
+    }
   }
 
   const tier = openTapTierId ? OPEN_TAP_TIERS.find((t) => t.id === openTapTierId) : null;
@@ -400,7 +427,7 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, shar
           <button
             type="button"
             className="btn btn--small btn--subtle"
-            onClick={handleShare}
+            onClick={handleShareOpen}
             title="Share this puzzle"
           >
             Share
@@ -421,8 +448,28 @@ export function GameScreen({ mode, levelIndex, openTapTierId, customConfig, shar
         </div>
       </div>
 
+      {shareOpen && (
+        <div className="win-overlay" onClick={handleShareClose}>
+          <div className="share-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Share Puzzle</h3>
+            <div className="share-dialog__code-row">
+              <code className="share-dialog__code">{shareCode}</code>
+              <button className="btn btn--small" onClick={handleCopyCode}>
+                Copy
+              </button>
+            </div>
+            <button className="btn btn--primary" onClick={handleShareMessage}>
+              Share Message
+            </button>
+            <button className="btn btn--subtle btn--small" onClick={handleShareClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {shareToast && (
-        <div className="share-toast" aria-live="polite">Link copied!</div>
+        <div className="share-toast" aria-live="polite">{shareToast}</div>
       )}
     </div>
   );
